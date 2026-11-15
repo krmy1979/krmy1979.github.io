@@ -67,6 +67,16 @@ h1{margin:0;font-weight:900;font-size:clamp(44px,11vw,96px);line-height:1;color:
 #nm:focus{outline:none;border-color:#19E3C2}
 #nmErr{color:#FF8FB3;font-size:13px;min-height:16px}
 #go{width:100%;margin-top:10px;background:#FFC93C;flex:none}
+#pulse{right:36px;bottom:146px;width:74px;height:74px;border-radius:50%;border:2px solid rgba(255,255,255,.3);background:rgba(25,227,194,.9);color:#0E1024;font-family:inherit;font-weight:700;font-size:14px;display:none}
+#hearts{font-size:20px;letter-spacing:3px;line-height:1}
+#timer{float:right;font-size:13px;opacity:.8;font-variant-numeric:tabular-nums}
+#hurt{inset:0;background:#ff2d55;opacity:0;pointer-events:none;transition:opacity .25s;z-index:6}
+#help{inset:0;z-index:12;display:none;align-items:center;justify-content:center;padding:16px;background:rgba(5,6,26,.86)}
+#helpBox{max-width:560px;width:100%;max-height:92%;overflow-y:auto;touch-action:pan-y;padding:20px}
+#helpBox h2{margin:0 0 4px;font-size:26px;color:#FFC93C}
+.hl{display:flex;gap:12px;align-items:flex-start;padding:9px 0;border-top:1px solid rgba(255,255,255,.1)}
+.hk{flex:none;min-width:78px;text-align:center;font-weight:700;font-size:13px;color:#0E1024;background:#19E3C2;border-radius:10px;padding:6px 8px}
+.ht{font-size:15px;line-height:1.4}
 #fade{inset:0;background:#fff;opacity:0;pointer-events:none;transition:opacity .7s;z-index:9}
 #err{inset:0;display:none;align-items:center;justify-content:center;padding:30px;text-align:center;font-size:18px;background:#05061a;z-index:20}
 </style>
@@ -74,19 +84,21 @@ h1{margin:0;font-weight:900;font-size:clamp(44px,11vw,96px);line-height:1;color:
 <body>
 <div class="ui" id="hud">
   <div class="glass" id="obj"><div id="objEn"></div><div class="he" id="objHe"></div></div>
-  <div class="glass" id="stat"><div id="rank"></div><div id="bar"><div id="fill"></div></div><div id="cnt"></div>
-    <button class="mini" id="snd">Sound: on</button> <button class="mini" id="heBtn">Hebrew: on</button> <button class="mini" id="menu">Worlds</button></div>
+  <div class="glass" id="stat"><div><span id="timer">0:00</span><span id="hearts"></span></div><div id="rank" style="margin-top:6px"></div><div id="bar"><div id="fill"></div></div><div id="cnt"></div>
+    <button class="mini" id="snd">Sound: on</button> <button class="mini" id="heBtn">Hebrew: on</button> <button class="mini" id="menu">Worlds</button> <button class="mini" id="helpBtn">Help</button></div>
 </div>
 <div class="ui" id="toast"></div>
 <div class="ui glass" id="dlg"><div id="who"></div><div id="say"></div><div class="he" id="sayHe"></div><button class="btn" id="next">Next</button></div>
 <div class="ui" id="joy"><div id="knob"></div></div>
 <button class="ui" id="jump">JUMP</button>
+<button class="ui" id="pulse">PULSE</button>
+<div class="ui" id="hurt"></div>
 <div class="ui" id="title">
   <h1>GIFTWALKERS</h1>
   <div class="h1he" dir="ltr">A Thousand Worlds · אלף עולמות</div>
   <div class="tag">Every choice opens a world.</div>
   <button class="btn" id="start" style="font-size:22px;padding:14px 48px;background:#FFC93C">Play</button>
-  <div class="sub">Keyboard: arrows or WASD, Space to jump · Phone: joystick and jump button</div>
+  <button class="btn" id="how" style="background:rgba(255,255,255,.14);color:#fff">How to play · איך משחקים</button>
 </div>
 <div class="ui" id="custom"><div class="glass" id="panel">
   <div class="ph">Create your walker <span class="he" style="display:inline">· עצבו את הדמות שלכם</span></div>
@@ -108,6 +120,18 @@ h1{margin:0;font-weight:900;font-size:clamp(44px,11vw,96px);line-height:1;color:
   <div id="wlist" style="display:flex;flex-direction:column;gap:10px"></div>
   <button class="btn" id="wEdit" style="background:#FFC93C">Edit character</button>
 </div>
+<div class="ui" id="help"><div class="glass" id="helpBox">
+  <h2>How to play</h2>
+  <div class="he" style="font-size:17px;margin-bottom:8px">איך משחקים</div>
+  <div class="hl"><div class="hk">MOVE</div><div class="ht">Joystick on a phone. Arrow keys or WASD on a computer.<div class="he">זזים עם הג'ויסטיק בטלפון, או עם החיצים / WASD במחשב.</div></div></div>
+  <div class="hl"><div class="hk">JUMP</div><div class="ht">JUMP button or Space. Press again in the air for a double jump.<div class="he">כפתור JUMP או רווח. לחיצה נוספת באוויר נותנת קפיצה כפולה.</div></div></div>
+  <div class="hl"><div class="hk">PULSE</div><div class="ht">PULSE button or the E key. A wave of light that clears grey Shades around you.<div class="he">כפתור PULSE או המקש E. פעימת אור שמסלקת את הצללים האפורים שסביבכם.</div></div></div>
+  <div class="hl"><div class="hk" style="background:#FFC93C">ARROW</div><div class="ht">Follow the spinning yellow arrow. It always marks your next goal.<div class="he">עקבו אחרי החץ הצהוב המסתובב. הוא תמיד מסמן את היעד הבא.</div></div></div>
+  <div class="hl"><div class="hk" style="background:#FF4D8D;color:#fff">HEARTS</div><div class="ht">Shades are pieces of the Collapse. If one touches you, you lose a heart. Lose all 3 and you go back to the start of the world.<div class="he">הצללים הם חלקים מהקריסה. צל שנוגע בכם לוקח לב. בלי לבבות חוזרים לתחילת העולם.</div></div></div>
+  <div class="hl"><div class="hk" style="background:#fff">STARS</div><div class="ht">Finish a world for 1 star, keep all your hearts for 2, and beat the clock for 3.<div class="he">סיום עולם נותן כוכב אחד, סיום בלי לאבד לב נותן שניים, וסיום מהיר נותן שלושה.</div></div></div>
+  <div class="hl"><div class="hk" style="background:#B48CFF">WORLDS</div><div class="ht">Lighthouse: collect sparks, find the compass, enter the gate. Builders: collect 6 blocks (two sit on floating stones) and cross the bridge. Market: buy crates, stock your stand, step on a price, and guard it from thieves.<div class="he">המגדלור: אספו ניצוצות, מצאו את המצפן והיכנסו לשער. הבונים: אספו 6 אבנים (שתיים על אבנים צפות) וחצו את הגשר. השוק: קנו ארגזים, מלאו את הדוכן, בחרו מחיר ושמרו עליו מגנבים.</div></div></div>
+  <button class="btn" id="helpOk" style="width:100%;margin-top:12px;background:#FFC93C">Got it · הבנתי</button>
+</div></div>
 <div class="ui" id="fade"></div>
 <div class="ui" id="err">The 3D engine could not load. Check your connection and refresh the page.</div>
 

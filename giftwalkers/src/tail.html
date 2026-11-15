@@ -114,6 +114,8 @@ const SFX={
   portal(t){noiseHit(t,1.5,.4,200,2.5).frequency.exponentialRampToValueAtTime(4200,t+1.3);tone(70,t,1.4,.25).frequency.exponentialRampToValueAtTime(340,t+1.3);},
   win(t){[0,4,7,12,16,19,24].forEach((s,i)=>tone(523.25*Math.pow(2,s/12),t+i*.1,1,.16,'triangle',AU.pluck));},
   click(t){tone(660,t,.06,.1,'triangle');},
+  hurt(t){tone(180,t,.3,.3,'sawtooth').frequency.exponentialRampToValueAtTime(60,t+.25);noiseHit(t,.18,.3,400,.8);},
+  pulse(t){noiseHit(t,.5,.3,300,2).frequency.exponentialRampToValueAtTime(3000,t+.4);tone(220,t,.5,.2,'sine',AU.pluck).frequency.exponentialRampToValueAtTime(880,t+.35);},
   fall(t){tone(420,t,.5,.18,'triangle').frequency.exponentialRampToValueAtTime(70,t+.45);}
 };
 function sfx(name,a){if(!AU.ctx)return;try{SFX[name](AU.ctx.currentTime,a);}catch(e){}}
@@ -142,7 +144,7 @@ applyHe();
 $('heBtn').addEventListener('click',()=>{heOn=!heOn;applyHe();save();sfx('click');});
 $('snd').addEventListener('click',()=>{AU.on=!AU.on;if(AU.ctx)AU.master.gain.value=AU.on?.9:0;sndLabel();});
 let isTouch=false,jx=0,jz=0,wantJump=false;
-function pads(on){const d=on&&isTouch?'block':'none';$('joy').style.display=d;$('jump').style.display=d;if(!on){jx=0;jz=0;}}
+function pads(on){const d=on&&isTouch?'block':'none';$('joy').style.display=d;$('jump').style.display=d;$('pulse').style.display=d;if(!on){jx=0;jz=0;}}
 let dq=[],dcb=null;
 function talk(lines,cb){dq=lines.slice();dcb=cb||null;G.busy=true;pads(false);$('dlg').style.display='block';nextLine();}
 function nextLine(){if(!dq.length){$('dlg').style.display='none';G.busy=false;pads(true);const c=dcb;dcb=null;if(c)c();return;}const l=dq.shift();$('who').textContent=l[0];$('say').textContent=l[1];$('sayHe').textContent=l[2];}
@@ -179,7 +181,7 @@ function drawRows(){
 function openCustom(){
   auInit();
   $('title').style.display='none';$('win').style.display='none';$('hud').style.display='none';$('custom').style.display='block';pads(false);
-  G.state='custom';G.busy=false;enterWorld('town');portal.visible=false;
+  G.state='custom';G.busy=false;enterWorld('town');portal.visible=false;offShades();
   P.x=0;P.y=0;P.z=30;P.vy=0;P.face=0;
   $('nm').value=cfg.name;$('nmErr').textContent='';rebuild();drawRows();snapCam();
 }
@@ -214,27 +216,27 @@ function rankLabel(){$('rank').textContent='Rank '+RANKS[Math.min(3,rank)];}
 function updCnt(){if(G.world==='market')mkHud();else $('cnt').textContent=G.world==='build'?('Blocks '+G.blocks+'/6'):('Sparks '+G.sparks+'/5');}
 function showGame(){auInit();rebuild();['title','win','custom','worlds'].forEach(id=>{$(id).style.display='none';});$('hud').style.display='flex';isTouch=('ontouchstart' in window)||navigator.maxTouchPoints>0;rankLabel();setXP(0);P.vy=0;P.y=0;P.face=Math.PI;}
 function openWorlds(){
-  auInit();pads(false);G.state='worlds';G.busy=false;$('win').style.display='none';$('custom').style.display='none';$('title').style.display='none';$('worlds').style.display='flex';
-  const L=[['The Lighthouse','Story start · night in the harbor town',1,startGame],['World of Builders','Build a bridge to the gift',2,startBuild],['World of the Market','Run a stand and earn 40 coins',2,startMarket],['World of the Garden','Coming soon',99,null],['World of Words','Coming soon',99,null]];
+  auInit();pads(false);offShades();G.state='worlds';G.busy=false;$('win').style.display='none';$('custom').style.display='none';$('title').style.display='none';$('worlds').style.display='flex';
+  const L=[['The Lighthouse','Story start · night in the harbor town',1,startGame,'town'],['World of Builders','Build a bridge to the gift',2,startBuild,'build'],['World of the Market','Run a stand and earn 40 coins',2,startMarket,'market'],['World of the Garden','Coming soon',99,null],['World of Words','Coming soon',99,null]];
   const box=$('wlist');box.innerHTML='';
-  L.forEach(w=>{const b=document.createElement('button');const lock=rank<w[2];b.className='wb'+(lock?' lock':'');b.innerHTML=w[0]+'<span>'+(lock&&w[2]<99?'Unlocks at Rank '+w[2]:w[1])+'</span>';if(!lock)b.addEventListener('click',()=>{sfx('click');w[3]();});box.appendChild(b);});
+  L.forEach(w=>{const b=document.createElement('button');const lock=rank<w[2];b.className='wb'+(lock?' lock':'');b.innerHTML=w[0]+(w[4]?' <b style="color:#FFC93C;float:right">'+starStr(stars[w[4]])+'</b>':'')+'<span>'+(lock&&w[2]<99?'Unlocks at Rank '+w[2]:w[1])+'</span>';if(!lock)b.addEventListener('click',()=>{sfx('click');w[3]();});box.appendChild(b);});
 }
 function startBuild(){
   showGame();G.state='build';G.blocks=0;
   blocks.forEach(b=>{b.on=true;b.g.visible=true;});segs.forEach(s=>{s.on=false;s.p=0;s.m.visible=false;s.m.scale.set(.01,.01,.01);});gift.visible=true;
-  enterWorld('build');P.x=0;P.z=7;snapCam();updCnt();
+  enterWorld('build');actReset('build');P.x=0;P.z=7;snapCam();updCnt();
   setObj('Collect <b>6 building blocks</b> to build a bridge to the gift','אספו 6 אבני בניין כדי לבנות גשר אל המתנה');
   talk([['World of Builders','Nothing here comes ready-made. What you build is what exists.','כאן שום דבר לא מגיע מוכן. מה שתבנו, הוא מה שקיים.'],['The Compass','A gift cannot be taken. It can only be learned. Build the bridge.','מתנה אי אפשר לקחת. אפשר רק ללמוד אותה. בנו את הגשר.']]);
 }
 function startMarket(){
   showGame();G.state='market';mkReset();
-  enterWorld('market');P.x=0;P.z=8;snapCam();updCnt();
+  enterWorld('market');actReset('market');P.x=0;P.z=8;snapCam();updCnt();
   setObj('Earn <b>40 coins</b> at your stand','הרוויחו 40 מטבעות בדוכן שלכם');
   talk([['World of the Market','Here an idea becomes a business. Buy low, sell at a fair price, and watch what people are willing to pay.','כאן רעיון הופך לעסק. קונים בזול, מוכרים במחיר הוגן, ורואים כמה אנשים מוכנים לשלם.'],['The Compass','Buy crates from the supplier, carry them to your stand, then step on a price. Earn 40 coins.','קנו ארגזים מהספק, סחבו אותם לדוכן, ואז עמדו על מחיר. הרוויחו 40 מטבעות.'],['The Compass','A crate costs 4 coins and holds 3 items. Price too high and customers walk away.','ארגז עולה 4 מטבעות ויש בו 3 פריטים. מחיר גבוה מדי, והלקוחות הולכים.']]);
 }
-function showWin(n,he,rewards){rank=Math.max(rank,n);save();rankLabel();$('winRk').textContent='Rank '+RANKS[n];$('winHe').textContent=he;const b=$('winRw');b.innerHTML='';rewards.forEach(r=>{const d=document.createElement('div');d.textContent=r;b.appendChild(d);});$('nextW').style.display=G.world==='build'?'':'none';setTimeout(()=>{$('win').style.display='flex';},1100);}
+function showWin(n,he,st,rewards){rewards=['Stars: '+starStr(st)+'   Time '+Math.floor(ACT.time)+'s'].concat(rewards);rank=Math.max(rank,n);save();rankLabel();$('winRk').textContent='Rank '+RANKS[n];$('winHe').textContent=he;const b=$('winRw');b.innerHTML='';rewards.forEach(r=>{const d=document.createElement('div');d.textContent=r;b.appendChild(d);});$('nextW').style.display=G.world==='build'?'':'none';setTimeout(()=>{$('win').style.display='flex';},1100);}
 function winMarket(){G.state='win';G.busy=true;pads(false);mkGift.visible=false;setXP(100);sfx('win');burst(0,3,6,0xFF4D8D,30);
-  showWin(3,'עליתם דרגה: נושאי מתנה',['Sold '+MK.sold+' items · '+MK.refused+' customers walked away','New ability: run a business','New item unlocked: Hoverboard','Next world: World of the Garden (coming soon)']);}
+  showWin(3,'עליתם דרגה: נושאי מתנה',awardStars('market'),['Sold '+MK.sold+' items · '+MK.refused+' customers walked away','New ability: run a business','New item unlocked: Hoverboard','Next world: World of the Garden (coming soon)']);}
 function startGame(){
   showGame();
   G.state='town';G.sparks=0;G.blocks=0;G.hasCompass=false;
@@ -242,22 +244,22 @@ function startGame(){
   segs.forEach(s=>{s.on=false;s.p=0;s.m.visible=false;});
   compass.visible=true;portal.visible=false;pLight.intensity=0;beam.material.opacity=0;lampGlow.material.opacity=0;lampCore.material.color.setHex(0x2a2f52);gift.visible=true;
   P.x=0;P.y=0;P.z=40;P.vy=0;P.face=Math.PI;
-  enterWorld('town');updCnt();snapCam();
+  enterWorld('town');actReset('town');updCnt();snapCam();
   setObj('Reach the <b>lighthouse</b> and collect sparks on the way','הגיעו אל המגדלור ואספו ניצוצות בדרך');
   const buddy=cfg.base==='nova'?'Kai':'Nova';
-  talk([[cfg.name,'The lighthouse just went dark. That has never happened.','האור במגדלור כבה. זה אף פעם לא קרה.'],[buddy,'And Deborah, the keeper, is not answering. Let’s go and check.','ודבורה, שומרת המגדלור, לא עונה. בוא נלך לבדוק.']]);
+  talk([[cfg.name,'The lighthouse just went dark. That has never happened.','האור במגדלור כבה. זה אף פעם לא קרה.'],[buddy,'And Deborah, the keeper, is not answering. Let’s go and check.','ודבורה, שומרת המגדלור, לא עונה. בוא נלך לבדוק.'],[buddy,'Careful. Grey Shades are drifting through town. Use PULSE to clear them.','זהירות. צללים אפורים מסתובבים בעיר. השתמשו ב-PULSE כדי לסלק אותם.']],()=>{let seen=false;try{seen=localStorage.getItem('eo_help')==='1';}catch(e){}if(!seen)openHelp();});
 }
 function toBuilders(){
-  G.busy=true;pads(false);$('fade').style.opacity=1;sfx('portal');
-  setTimeout(()=>{G.state='build';enterWorld('build');P.x=0;P.y=0;P.z=7;P.vy=0;P.face=Math.PI;snapCam();updCnt();
+  G.busy=true;pads(false);$('fade').style.opacity=1;sfx('portal');const ts=awardStars('town');
+  setTimeout(()=>{G.state='build';enterWorld('build');actReset('build');toast('Lighthouse: '+starStr(ts));P.x=0;P.y=0;P.z=7;P.vy=0;P.face=Math.PI;snapCam();updCnt();
     setObj('Collect <b>6 building blocks</b> to build a bridge to the gift','אספו 6 אבני בניין כדי לבנות גשר אל המתנה');$('fade').style.opacity=0;
     talk([['World of Builders','Nothing here comes ready-made. What you build is what exists.','כאן שום דבר לא מגיע מוכן. מה שתבנו, הוא מה שקיים.'],['The Compass','A gift cannot be taken. It can only be learned. Build the bridge.','מתנה אי אפשר לקחת. אפשר רק ללמוד אותה. בנו את הגשר.']]);},900);
 }
-function winGame(){G.state='win';G.busy=true;pads(false);gift.visible=false;setXP(100);sfx('win');burst(0,3,-46,0xFFC93C,30);showWin(2,'עליתם דרגה: הולכי שבילים',['New ability: free building','New item unlocked: Builder helmet','Next world: World of the Market']);}
+function winGame(){G.state='win';G.busy=true;pads(false);gift.visible=false;setXP(100);sfx('win');burst(0,3,-46,0xFFC93C,30);showWin(2,'עליתם דרגה: הולכי שבילים',awardStars('build'),['New ability: free building','New item unlocked: Builder helmet','Next world: World of the Market']);}
 
 /* ---------- input ---------- */
 const keys={};
-window.addEventListener('keydown',e=>{if(e.target&&e.target.tagName==='INPUT')return;keys[e.code]=true;if(e.code==='Space'){wantJump=true;e.preventDefault();}});
+window.addEventListener('keydown',e=>{if(e.target&&e.target.tagName==='INPUT')return;keys[e.code]=true;if(e.code==='KeyE'||e.code==='KeyF')pulse();if(e.code==='Escape'&&G.help)closeHelp();if(e.code==='Space'){wantJump=true;e.preventDefault();}});
 window.addEventListener('keyup',e=>{keys[e.code]=false;});
 const joy=$('joy'),knob=$('knob');let jid=null;
 function joyMove(e){const r=joy.getBoundingClientRect();let dx=e.clientX-(r.left+r.width/2),dy=e.clientY-(r.top+r.height/2);const m=Math.hypot(dx,dy),mx=46;if(m>mx){dx*=mx/m;dy*=mx/m;}knob.style.transform='translate('+dx+'px,'+dy+'px)';jx=dx/mx;jz=dy/mx;}
@@ -266,13 +268,18 @@ joy.addEventListener('pointermove',e=>{if(e.pointerId===jid)joyMove(e);});
 function joyEnd(e){if(e.pointerId!==jid)return;jid=null;jx=jz=0;knob.style.transform='';}
 joy.addEventListener('pointerup',joyEnd);joy.addEventListener('pointercancel',joyEnd);
 $('jump').addEventListener('pointerdown',e=>{wantJump=true;e.preventDefault();});
+$('pulse').addEventListener('pointerdown',e=>{pulse();e.preventDefault();});
+function openHelp(){G.help=true;pads(false);$('help').style.display='flex';try{localStorage.setItem('eo_help','1');}catch(e){}}
+function closeHelp(){G.help=false;$('help').style.display='none';if((G.state==='town'||G.state==='build'||G.state==='market')&&!G.busy)pads(true);sfx('click');}
+$('how').addEventListener('click',openHelp);$('helpBtn').addEventListener('click',openHelp);$('helpOk').addEventListener('click',closeHelp);
 
 /* ---------- world logic ---------- */
 function groundAt(x,z){
   if(G.world!=='build')return 0;
-  for(let i=0;i<plats.length;i++){const p=plats[i];const dx=x-p.x,dz=z-p.z;if(dx*dx+dz*dz<=p.r*p.r)return 0;}
-  if(Math.abs(x)<=2.5){for(let i=0;i<segs.length;i++){const s=segs[i];if(s.on&&z>=s.z0&&z<=s.z1)return 0;}}
-  return -1e9;
+  let best=-1e9;
+  for(let i=0;i<plats.length;i++){const p=plats[i],dx=x-p.x,dz=z-p.z,py=p.y||0;if(dx*dx+dz*dz<=p.r*p.r&&py<=P.y+.55&&py>best)best=py;}
+  if(best<0&&Math.abs(x)<=2.5&&P.y>=-.6){for(let i=0;i<segs.length;i++){const s=segs[i];if(s.on&&z>=s.z0&&z<=s.z1)best=0;}}
+  return best;
 }
 const cam={x:0,y:8,z:52};
 function camGoal(){const port=camera.aspect<1;return {x:P.x*.75,y:P.y+(port?7.5:5.6),z:P.z+(port?14.5:10.5)};}
@@ -282,19 +289,21 @@ function update(dt){
   G.t+=dt;const t=G.t;
   let ix=(keys.ArrowRight||keys.KeyD?1:0)-(keys.ArrowLeft||keys.KeyA?1:0)+jx;
   let iz=(keys.ArrowDown||keys.KeyS?1:0)-(keys.ArrowUp||keys.KeyW?1:0)+jz;
-  const playing=(G.state==='town'||G.state==='build'||G.state==='market')&&!G.busy;
+  const playing=(G.state==='town'||G.state==='build'||G.state==='market')&&!G.busy&&!G.help;
   if(!playing){ix=0;iz=0;wantJump=false;}
   const mag=Math.hypot(ix,iz);if(mag>1){ix/=mag;iz/=mag;}
   const speed=9.5;
   let nx=P.x+ix*speed*dt,nz=P.z+iz*speed*dt;
+  if(ACT.kt>0){ACT.kt-=dt;nx+=ACT.kx*dt;nz+=ACT.kz*dt;}
   if(G.world==='market'){let dx=nx-MKC.x,dz=nz-MKC.z,d=Math.hypot(dx,dz);if(d>MKC.r){nx=MKC.x+dx/d*MKC.r;nz=MKC.z+dz/d*MKC.r;}[[SUP.x,SUP.z,2.6],[STALL.x,STALL.z,2.9]].forEach(o=>{const ox=nx-o[0],oz=nz-o[1],od=Math.hypot(ox,oz);if(od<o[2]&&od>0){nx=o[0]+ox/od*o[2];nz=o[1]+oz/od*o[2];}});}
   if(G.world==='town'&&G.state!=='custom'){nx=Math.max(-7.6,Math.min(7.4,nx));nz=Math.max(-46.5,Math.min(44,nz));const dx=nx,dz=nz+44,d=Math.hypot(dx,dz);if(d<2.1&&compass.visible===false&&d>0){nx=dx/d*2.1;nz=dz/d*2.1-44;}}
   P.x=nx;P.z=nz;
   const gy=groundAt(P.x,P.z),wasGround=P.ground;
-  if(wantJump&&P.ground){P.vy=11.5;P.ground=false;sfx('jump');}
+  if(wantJump&&P.ground){P.vy=11.5;P.ground=false;P.jumps=0;sfx('jump');}
+  else if(wantJump&&!P.ground&&!P.jumps){P.vy=10.5;P.jumps=1;sfx('jump');burst(P.x,P.y+.3,P.z,0xffffff,6);}
   wantJump=false;
   P.vy-=30*dt;P.y+=P.vy*dt;
-  if(P.y<=gy&&P.vy<=0&&P.y>gy-1.2){if(!wasGround&&P.vy<-6)sfx('land');P.y=gy;P.vy=0;P.ground=true;}else if(P.y>gy+.01||gy<-1e8){P.ground=false;}
+  if(P.y<=gy&&P.vy<=0&&P.y>gy-1.2){if(!wasGround&&P.vy<-6)sfx('land');P.y=gy;P.vy=0;P.ground=true;P.jumps=0;}else if(P.y>gy+.01||gy<-1e8){P.ground=false;}
   if(P.y<-40){P.x=0;P.y=6;P.z=7;P.vy=0;toast('You fell. Try again');sfx('fall');}
   if(mag>.08){const target=Math.atan2(ix,iz);let d=target-P.face;while(d>Math.PI)d-=Math.PI*2;while(d<-Math.PI)d+=Math.PI*2;P.face+=d*Math.min(1,dt*12);P.walk+=dt*11*Math.min(1,mag);
     const si=Math.floor(P.walk/Math.PI);if(si!==P.stepI){P.stepI=si;if(P.ground)sfx('step');}}
@@ -330,15 +339,16 @@ function update(dt){
     else portal.userData.s=0;
   }else if(w==='market'){mkUpdate(t,dt,playing);
   }else{
-    blocks.forEach((b,i)=>{if(!b.on)return;b.g.rotation.y=t*1.5+i;b.g.position.y=1.5+Math.sin(t*2+i)*.25;
-      if(playing&&P.y<3&&Math.hypot(P.x-b.x,P.z-b.z)<1.8){b.on=false;b.g.visible=false;const s=segs[G.blocks];s.on=true;s.m.visible=true;G.blocks++;setXP(G.xp+7);updCnt();sfx('block',G.blocks);burst(b.x,1.6,b.z,0xFFC93C,12);toast(G.blocks<6?('Block '+G.blocks+' placed on the bridge'):'The bridge is complete!');if(G.blocks===6)setObj('Cross the bridge to the <b>gift</b>','חצו את הגשר אל המתנה');}});
+    blocks.forEach((b,i)=>{if(!b.on)return;b.g.rotation.y=t*1.5+i;b.g.position.y=(b.y||0)+1.5+Math.sin(t*2+i)*.25;
+      if(playing&&Math.abs(P.y-(b.y||0))<2.5&&Math.hypot(P.x-b.x,P.z-b.z)<1.8){b.on=false;b.g.visible=false;const s=segs[G.blocks];s.on=true;s.m.visible=true;G.blocks++;setXP(G.xp+7);updCnt();sfx('block',G.blocks);burst(b.x,1.6,b.z,0xFFC93C,12);toast(G.blocks<6?('Block '+G.blocks+' placed on the bridge'):'The bridge is complete!');if(G.blocks===6)setObj('Cross the bridge to the <b>gift</b>','חצו את הגשר אל המתנה');}});
     segs.forEach(s=>{if(s.on&&s.p<1){s.p=Math.min(1,s.p+dt*3);const e=1-Math.pow(1-s.p,3),o=1+Math.sin(s.p*Math.PI)*.25;s.m.scale.set(e*o,e*o,e*o);}});
     gift.rotation.y=t*1.2;gift.position.y=3+Math.sin(t*1.8)*.3;
     if(playing&&Math.hypot(P.x,P.z+46)<2.8)winGame();
   }
 }
+function offShades(){ACT.shades.forEach(s=>{s.on=false;s.dead=0;s.g.visible=false;});guide.visible=false;ring.visible=false;}
 let last=performance.now();
-function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;update(dt);renderer.render(scene,camera);requestAnimationFrame(loop);}
+function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;update(dt);actUpdate(G.t,dt,(G.state==='town'||G.state==='build'||G.state==='market')&&!G.busy&&!G.help);renderer.render(scene,camera);requestAnimationFrame(loop);}
 enterWorld('town');
 requestAnimationFrame(loop);
 })();
