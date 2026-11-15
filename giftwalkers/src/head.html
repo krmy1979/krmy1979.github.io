@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Giftwalkers – A Thousand Worlds</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700;900&display=swap">
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overflow:hidden;background:#05061a;font-family:'Rubik',system-ui,sans-serif;color:#fff;touch-action:none;user-select:none;-webkit-user-select:none}
+canvas{position:fixed;inset:0;width:100%;height:100%;display:block}
+.ui{position:fixed;z-index:5}
+.glass{background:rgba(14,16,36,.76);border:1px solid rgba(255,255,255,.14);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-radius:18px}
+.he{direction:rtl;font-size:.82em;opacity:.78;font-weight:400;margin-top:3px}
+body.nohe .he{display:none}
+#hud{top:12px;left:12px;right:12px;display:none;gap:10px;align-items:flex-start;justify-content:space-between;pointer-events:none}
+#obj{padding:10px 16px;font-weight:500;font-size:16px;max-width:60%;line-height:1.35}
+#obj b{color:#19E3C2}
+#stat{padding:10px 14px;min-width:150px;font-size:13px}
+#rank{font-weight:700;color:#FFC93C;font-size:14px;margin-bottom:6px}
+#bar{height:8px;border-radius:8px;background:rgba(255,255,255,.14);overflow:hidden}
+#fill{height:100%;width:0;background:linear-gradient(90deg,#19E3C2,#FFC93C);transition:width .4s}
+#cnt{margin-top:6px;font-weight:500}
+.mini{pointer-events:auto;font-family:inherit;font-size:12px;color:#fff;background:rgba(255,255,255,.12);border:0;border-radius:999px;padding:8px 10px;margin-top:8px;cursor:pointer;min-height:34px}
+#toast{top:104px;left:50%;transform:translateX(-50%) translateY(-20px);padding:10px 22px;font-weight:700;font-size:18px;color:#0E1024;background:#FFC93C;border-radius:999px;opacity:0;transition:all .3s;pointer-events:none;white-space:nowrap}
+#toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+#dlg{z-index:7;left:12px;right:12px;bottom:18px;padding:18px 20px;display:none;max-width:660px;margin:0 auto}
+#who{font-weight:700;color:#19E3C2;font-size:15px;margin-bottom:6px}
+#say{font-size:20px;line-height:1.45}
+#sayHe{font-size:16px;line-height:1.5;margin-top:8px}
+.btn{font-family:inherit;font-weight:700;border:0;border-radius:999px;cursor:pointer;color:#0E1024;background:#19E3C2;padding:12px 28px;font-size:18px;min-height:48px}
+.btn:active{transform:scale(.96)}
+#next{margin-top:12px;float:right}
+#joy{left:22px;bottom:26px;width:132px;height:132px;border-radius:50%;background:rgba(255,255,255,.08);border:2px solid rgba(255,255,255,.22);display:none}
+#knob{position:absolute;left:41px;top:41px;width:50px;height:50px;border-radius:50%;background:rgba(25,227,194,.85)}
+#jump{right:26px;bottom:44px;width:86px;height:86px;border-radius:50%;border:2px solid rgba(255,255,255,.3);background:rgba(255,77,141,.85);color:#fff;font-family:inherit;font-weight:700;font-size:16px;display:none}
+#title,#win,#worlds{inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center;background:linear-gradient(180deg,rgba(5,6,26,.2),rgba(5,6,26,.82))}
+#win,#worlds{display:none;background:rgba(5,6,26,.82)}
+#worlds{z-index:8}
+.wb{font-family:inherit;color:#fff;text-align:left;width:min(420px,88vw);padding:14px 18px;border-radius:16px;border:2px solid rgba(255,255,255,.18);background:rgba(255,255,255,.08);cursor:pointer;font-size:18px;font-weight:700;min-height:56px}
+.wb span{display:block;font-size:13px;font-weight:400;opacity:.8;margin-top:2px}
+.wb.lock{opacity:.45;cursor:default}
+.wb:not(.lock):active{transform:scale(.98)}
+h1{margin:0;font-weight:900;font-size:clamp(44px,11vw,96px);line-height:1;color:#FFC93C;text-shadow:0 0 34px rgba(255,201,60,.55)}
+.h1he{font-size:clamp(26px,6vw,44px);font-weight:700;direction:rtl}
+.tag{font-size:clamp(18px,4.6vw,26px);font-weight:500}
+.sub{font-size:14px;opacity:.8;max-width:520px}
+#win h2,#worlds h2{margin:0;font-size:clamp(34px,9vw,60px);font-weight:900;color:#19E3C2}
+#win .rk{font-size:26px;font-weight:700;color:#FFC93C}
+.rw{display:flex;flex-direction:column;gap:8px;font-size:17px}
+.rw div{padding:9px 18px;border-radius:14px;background:rgba(255,255,255,.1)}
+#custom{inset:0;display:none;pointer-events:none}
+#panel{pointer-events:auto;position:absolute;left:10px;right:10px;bottom:10px;max-height:54%;overflow-y:auto;touch-action:pan-y;padding:14px 14px 16px}
+@media(min-width:820px){#panel{left:auto;right:16px;top:16px;bottom:16px;width:400px;max-height:none}}
+.ph{font-weight:700;font-size:19px;margin-bottom:6px}
+.row{display:flex;align-items:center;gap:10px;margin:8px 0}
+.lb{width:78px;flex:none;font-size:13px;opacity:.8}
+.opts{display:flex;gap:8px;overflow-x:auto;touch-action:pan-x;padding:3px 2px;flex:1;scrollbar-width:none}
+.opts::-webkit-scrollbar{display:none}
+.sw{flex:none;width:40px;height:40px;border-radius:50%;border:3px solid rgba(255,255,255,.15);cursor:pointer;padding:0}
+.sw.sel{border-color:#fff;box-shadow:0 0 0 2px #19E3C2}
+.ch{flex:none;font-family:inherit;color:#fff;background:rgba(255,255,255,.1);border:2px solid transparent;border-radius:999px;padding:9px 14px;font-size:14px;cursor:pointer;white-space:nowrap;min-height:40px}
+.ch.sel{border-color:#19E3C2;background:rgba(25,227,194,.2)}
+.ch.lock{opacity:.45}
+#nm{flex:1;min-width:0;font-family:inherit;font-size:17px;color:#fff;background:rgba(255,255,255,.1);border:2px solid rgba(255,255,255,.2);border-radius:12px;padding:10px 12px;user-select:text;-webkit-user-select:text;min-height:44px}
+#nm:focus{outline:none;border-color:#19E3C2}
+#nmErr{color:#FF8FB3;font-size:13px;min-height:16px}
+#go{width:100%;margin-top:8px;background:#FFC93C}
+#fade{inset:0;background:#fff;opacity:0;pointer-events:none;transition:opacity .7s;z-index:9}
+#err{inset:0;display:none;align-items:center;justify-content:center;padding:30px;text-align:center;font-size:18px;background:#05061a;z-index:20}
+</style>
+</head>
+<body>
+<div class="ui" id="hud">
+  <div class="glass" id="obj"><div id="objEn"></div><div class="he" id="objHe"></div></div>
+  <div class="glass" id="stat"><div id="rank"></div><div id="bar"><div id="fill"></div></div><div id="cnt"></div>
+    <button class="mini" id="snd">Sound: on</button> <button class="mini" id="heBtn">Hebrew: on</button> <button class="mini" id="menu">Worlds</button></div>
+</div>
+<div class="ui" id="toast"></div>
+<div class="ui glass" id="dlg"><div id="who"></div><div id="say"></div><div class="he" id="sayHe"></div><button class="btn" id="next">Next</button></div>
+<div class="ui" id="joy"><div id="knob"></div></div>
+<button class="ui" id="jump">JUMP</button>
+<div class="ui" id="title">
+  <h1>GIFTWALKERS</h1>
+  <div class="h1he" dir="ltr">A Thousand Worlds · אלף עולמות</div>
+  <div class="tag">Every choice opens a world.</div>
+  <button class="btn" id="start" style="font-size:22px;padding:14px 48px;background:#FFC93C">Play</button>
+  <div class="sub">Keyboard: arrows or WASD, Space to jump · Phone: joystick and jump button</div>
+</div>
+<div class="ui" id="custom"><div class="glass" id="panel">
+  <div class="ph">Create your walker <span class="he" style="display:inline">· עצבו את הדמות שלכם</span></div>
+  <div class="row"><span class="lb">Name</span><input id="nm" maxlength="14" placeholder="Your name" autocomplete="off" autocapitalize="words"></div>
+  <div id="nmErr"></div>
+  <div id="rows"></div>
+  <button class="btn" id="go">Enter the world</button>
+</div></div>
+<div class="ui" id="win">
+  <h2>Rank up!</h2>
+  <div class="rk" id="winRk"></div>
+  <div class="he" id="winHe" style="font-size:18px"></div>
+  <div class="rw" id="winRw"></div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center"><button class="btn" id="nextW">Next world</button><button class="btn" id="again" style="background:#fff">Worlds</button><button class="btn" id="edit" style="background:#FFC93C">Edit character</button></div>
+</div>
+<div class="ui" id="worlds">
+  <h2>Choose a world</h2>
+  <div class="he" style="font-size:17px">בחרו עולם</div>
+  <div id="wlist" style="display:flex;flex-direction:column;gap:10px"></div>
+  <button class="btn" id="wEdit" style="background:#FFC93C">Edit character</button>
+</div>
+<div class="ui" id="fade"></div>
+<div class="ui" id="err">The 3D engine could not load. Check your connection and refresh the page.</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+const $=id=>document.getElementById(id);
+if(typeof THREE==='undefined'){ $('err').style.display='flex'; return; }
+const T=THREE;
+
+/* ---------- renderer ---------- */
+const renderer=new T.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+renderer.outputEncoding=T.sRGBEncoding;
+renderer.toneMapping=T.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.15;
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=T.PCFSoftShadowMap;
+document.body.insertBefore(renderer.domElement,document.body.firstChild);
+const scene=new T.Scene();
+const camera=new T.PerspectiveCamera(58,1,0.1,900);
+function resize(){const w=window.innerWidth,h=window.innerHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}
+window.addEventListener('resize',resize);resize();
+
