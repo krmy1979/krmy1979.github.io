@@ -259,7 +259,7 @@ function winGame(){G.state='win';G.busy=true;pads(false);gift.visible=false;setX
 
 /* ---------- input ---------- */
 const keys={};
-window.addEventListener('keydown',e=>{if(e.target&&e.target.tagName==='INPUT')return;keys[e.code]=true;if(e.code==='KeyE'||e.code==='KeyF')pulse();if(e.code==='Escape'&&G.help)closeHelp();if(e.code==='Space'){wantJump=true;e.preventDefault();}});
+window.addEventListener('keydown',e=>{if(e.target&&e.target.tagName==='INPUT')return;keys[e.code]=true;if(e.code==='KeyE'||e.code==='KeyF')pulse();if(e.code==='Escape'&&G.help){if($('mp').style.display==='flex')closeMp();else closeHelp();}if(e.code==='Space'){wantJump=true;e.preventDefault();}});
 window.addEventListener('keyup',e=>{keys[e.code]=false;});
 const joy=$('joy'),knob=$('knob');let jid=null;
 function joyMove(e){const r=joy.getBoundingClientRect();let dx=e.clientX-(r.left+r.width/2),dy=e.clientY-(r.top+r.height/2);const m=Math.hypot(dx,dy),mx=46;if(m>mx){dx*=mx/m;dy*=mx/m;}knob.style.transform='translate('+dx+'px,'+dy+'px)';jx=dx/mx;jz=dy/mx;}
@@ -271,6 +271,8 @@ $('jump').addEventListener('pointerdown',e=>{wantJump=true;e.preventDefault();})
 $('pulse').addEventListener('pointerdown',e=>{pulse();e.preventDefault();});
 function openHelp(){G.help=true;pads(false);$('help').style.display='flex';try{localStorage.setItem('eo_help','1');}catch(e){}}
 function closeHelp(){G.help=false;$('help').style.display='none';if((G.state==='town'||G.state==='build'||G.state==='market')&&!G.busy)pads(true);sfx('click');}
+$('mpBtn').addEventListener('click',openMp);$('frBtn').addEventListener('click',openMp);$('mpClose').addEventListener('click',closeMp);$('mpCreate').addEventListener('click',mpCreate);$('mpJoin').addEventListener('click',mpJoinClick);$('mpShare').addEventListener('click',mpShare);$('mpLeave').addEventListener('click',()=>{netLeave();mpMsg('You left the room.',true);});
+$('mpInput').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('mpInput').blur();mpJoinClick();}});
 $('how').addEventListener('click',openHelp);$('helpBtn').addEventListener('click',openHelp);$('helpOk').addEventListener('click',closeHelp);
 
 /* ---------- world logic ---------- */
@@ -348,8 +350,9 @@ function update(dt){
 }
 function offShades(){ACT.shades.forEach(s=>{s.on=false;s.dead=0;s.g.visible=false;});guide.visible=false;ring.visible=false;}
 let last=performance.now();
-function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;update(dt);actUpdate(G.t,dt,(G.state==='town'||G.state==='build'||G.state==='market')&&!G.busy&&!G.help);renderer.render(scene,camera);requestAnimationFrame(loop);}
+function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;update(dt);netUpdate(G.t,dt);actUpdate(G.t,dt,(G.state==='town'||G.state==='build'||G.state==='market')&&!G.busy&&!G.help);renderer.render(scene,camera);requestAnimationFrame(loop);}
 enterWorld('town');
+if(NET.pending)openMp();
 requestAnimationFrame(loop);
 })();
 </script>

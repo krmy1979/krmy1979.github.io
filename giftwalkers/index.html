@@ -63,15 +63,17 @@ h1{margin:0;font-weight:900;font-size:clamp(44px,11vw,96px);line-height:1;color:
 .ch{flex:none;font-family:inherit;color:#fff;background:rgba(255,255,255,.1);border:2px solid transparent;border-radius:999px;padding:9px 14px;font-size:14px;cursor:pointer;white-space:nowrap;min-height:40px}
 .ch.sel{border-color:#19E3C2;background:rgba(25,227,194,.2)}
 .ch.lock{opacity:.45}
-#nm{flex:1;min-width:0;font-family:inherit;font-size:17px;color:#fff;background:rgba(255,255,255,.1);border:2px solid rgba(255,255,255,.2);border-radius:12px;padding:10px 12px;user-select:text;-webkit-user-select:text;min-height:44px}
-#nm:focus{outline:none;border-color:#19E3C2}
+#nm,#mpInput{flex:1;min-width:0;font-family:inherit;font-size:17px;color:#fff;background:rgba(255,255,255,.1);border:2px solid rgba(255,255,255,.2);border-radius:12px;padding:10px 12px;user-select:text;-webkit-user-select:text;min-height:44px}
+#nm:focus,#mpInput:focus{outline:none;border-color:#19E3C2}
 #nmErr{color:#FF8FB3;font-size:13px;min-height:16px}
 #go{width:100%;margin-top:10px;background:#FFC93C;flex:none}
 #pulse{right:36px;bottom:146px;width:74px;height:74px;border-radius:50%;border:2px solid rgba(255,255,255,.3);background:rgba(25,227,194,.9);color:#0E1024;font-family:inherit;font-weight:700;font-size:14px;display:none}
 #hearts{font-size:20px;letter-spacing:3px;line-height:1}
 #timer{float:right;font-size:13px;opacity:.8;font-variant-numeric:tabular-nums}
 #hurt{inset:0;background:#ff2d55;opacity:0;pointer-events:none;transition:opacity .25s;z-index:6}
-#help{inset:0;z-index:12;display:none;align-items:center;justify-content:center;padding:16px;background:rgba(5,6,26,.86)}
+#help,#mp{inset:0;z-index:12;display:none;align-items:center;justify-content:center;padding:16px;background:rgba(5,6,26,.86)}
+#mpBox{max-width:460px;width:100%;max-height:92%;overflow-y:auto;touch-action:pan-y;padding:20px}
+#mpBox h2{margin:0 0 4px;font-size:26px;color:#FFC93C}
 #helpBox{max-width:560px;width:100%;max-height:92%;overflow-y:auto;touch-action:pan-y;padding:20px}
 #helpBox h2{margin:0 0 4px;font-size:26px;color:#FFC93C}
 .hl{display:flex;gap:12px;align-items:flex-start;padding:9px 0;border-top:1px solid rgba(255,255,255,.1)}
@@ -83,9 +85,9 @@ h1{margin:0;font-weight:900;font-size:clamp(44px,11vw,96px);line-height:1;color:
 </head>
 <body>
 <div class="ui" id="hud">
-  <div class="glass" id="obj"><div id="objEn"></div><div class="he" id="objHe"></div></div>
+  <div class="glass" id="obj"><div id="objEn"></div><div class="he" id="objHe"></div><div id="roomBadge" style="display:none;margin-top:6px;font-size:13px;font-weight:700;color:#FFC93C"></div></div>
   <div class="glass" id="stat"><div><span id="timer">0:00</span><span id="hearts"></span></div><div id="rank" style="margin-top:6px"></div><div id="bar"><div id="fill"></div></div><div id="cnt"></div>
-    <button class="mini" id="snd">Sound: on</button> <button class="mini" id="heBtn">Hebrew: on</button> <button class="mini" id="menu">Worlds</button> <button class="mini" id="helpBtn">Help</button></div>
+    <button class="mini" id="snd">Sound: on</button> <button class="mini" id="heBtn">Hebrew: on</button> <button class="mini" id="menu">Worlds</button> <button class="mini" id="helpBtn">Help</button> <button class="mini" id="frBtn">Friends</button></div>
 </div>
 <div class="ui" id="toast"></div>
 <div class="ui glass" id="dlg"><div id="who"></div><div id="say"></div><div class="he" id="sayHe"></div><button class="btn" id="next">Next</button></div>
@@ -98,6 +100,7 @@ h1{margin:0;font-weight:900;font-size:clamp(44px,11vw,96px);line-height:1;color:
   <div class="h1he" dir="ltr">A Thousand Worlds · אלף עולמות</div>
   <div class="tag">Every choice opens a world.</div>
   <button class="btn" id="start" style="font-size:22px;padding:14px 48px;background:#FFC93C">Play</button>
+  <button class="btn" id="mpBtn" style="background:#19E3C2">Play with friends · לשחק עם חברים</button>
   <button class="btn" id="how" style="background:rgba(255,255,255,.14);color:#fff">How to play · איך משחקים</button>
 </div>
 <div class="ui" id="custom"><div class="glass" id="panel">
@@ -131,6 +134,25 @@ h1{margin:0;font-weight:900;font-size:clamp(44px,11vw,96px);line-height:1;color:
   <div class="hl"><div class="hk" style="background:#fff">STARS</div><div class="ht">Finish a world for 1 star, keep all your hearts for 2, and beat the clock for 3.<div class="he">סיום עולם נותן כוכב אחד, סיום בלי לאבד לב נותן שניים, וסיום מהיר נותן שלושה.</div></div></div>
   <div class="hl"><div class="hk" style="background:#B48CFF">WORLDS</div><div class="ht">Lighthouse: collect sparks, find the compass, enter the gate. Builders: collect 6 blocks (two sit on floating stones) and cross the bridge. Market: buy crates, stock your stand, step on a price, and guard it from thieves.<div class="he">המגדלור: אספו ניצוצות, מצאו את המצפן והיכנסו לשער. הבונים: אספו 6 אבנים (שתיים על אבנים צפות) וחצו את הגשר. השוק: קנו ארגזים, מלאו את הדוכן, בחרו מחיר ושמרו עליו מגנבים.</div></div></div>
   <button class="btn" id="helpOk" style="width:100%;margin-top:12px;background:#FFC93C">Got it · הבנתי</button>
+</div></div>
+<div class="ui" id="mp"><div class="glass" id="mpBox">
+  <h2>Play with friends</h2>
+  <div class="he" style="font-size:17px;margin-bottom:8px">לשחק עם חברים</div>
+  <div id="mpOut">
+    <p class="ht" style="margin:6px 0 12px">Create a room and send the code to your friends, or join a room with a code you got. Up to 8 players.<span class="he" style="display:block">צרו חדר ושלחו את הקוד לחברים, או הצטרפו לחדר עם קוד שקיבלתם. עד 8 שחקנים.</span></p>
+    <button class="btn" id="mpCreate" style="width:100%">Create a room</button>
+    <div class="row" style="margin-top:12px"><input id="mpInput" maxlength="7" placeholder="ABC-123" autocomplete="off" autocapitalize="characters" enterkeyhint="go"><button class="btn" id="mpJoin" style="background:#FFC93C">Join</button></div>
+  </div>
+  <div id="mpIn" style="display:none">
+    <div class="ht">Your room code</div>
+    <div id="mpCode" style="font-size:44px;font-weight:900;color:#FFC93C;letter-spacing:3px"></div>
+    <div id="mpWho" class="ht" style="opacity:.85;margin:6px 0 12px"></div>
+    <button class="btn" id="mpShare" style="width:100%">Share invite</button>
+    <button class="btn" id="mpLeave" style="width:100%;margin-top:8px;background:rgba(255,255,255,.14);color:#fff">Leave room</button>
+    <p class="ht" style="opacity:.8;margin:10px 0 0">Friends appear when they are in the same world as you.<span class="he" style="display:block">חברים מופיעים כשהם באותו עולם שבו אתם נמצאים.</span></p>
+  </div>
+  <div id="mpMsg" style="min-height:20px;font-size:14px;margin-top:8px"></div>
+  <button class="btn" id="mpClose" style="width:100%;margin-top:8px;background:#fff">Close</button>
 </div></div>
 <div class="ui" id="fade"></div>
 <div class="ui" id="err">The 3D engine could not load. Check your connection and refresh the page.</div>
@@ -473,6 +495,114 @@ function actUpdate(t,dt,playing){
   if(gt){guide.position.set(gt[0],gt[1]+4.4+Math.sin(t*4)*.35,gt[2]);guide.rotation.y=t*2;}
 }
 
+/* ---------- ONLINE: rooms with a code (Firebase Realtime Database) ---------- */
+// The Firebase web config is a public identifier, not a secret. Access is limited by the database rules.
+const FB_CFG={apiKey:"AIzaSyDUbJ-N7gd2KE6qks8LFijYRN5DpBp59sI",authDomain:"giftwalkers.firebaseapp.com",databaseURL:"https://giftwalkers-default-rtdb.asia-southeast1.firebasedatabase.app",projectId:"giftwalkers",storageBucket:"giftwalkers.firebasestorage.app",messagingSenderId:"286160960989",appId:"1:286160960989:web:8f53be4f1a42acf8858a34"};
+const FB_V='10.12.2';
+const NET={ready:false,loading:null,uid:null,room:null,ref:null,me:null,peers:{},last:0,sent:'',pending:null};
+window.__NET=NET;
+function loadScript(src){return new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.onload=()=>res();s.onerror=()=>rej(new Error('load'));document.head.appendChild(s);});}
+function netInit(){
+  if(NET.ready)return Promise.resolve();
+  if(NET.loading)return NET.loading;
+  const base='https://www.gstatic.com/firebasejs/'+FB_V+'/';
+  NET.loading=loadScript(base+'firebase-app-compat.js').then(()=>loadScript(base+'firebase-auth-compat.js')).then(()=>loadScript(base+'firebase-database-compat.js'))
+    .then(()=>{if(!firebase.apps.length)firebase.initializeApp(FB_CFG);return firebase.auth().signInAnonymously();})
+    .then(c=>{NET.uid=c.user.uid;NET.ready=true;})
+    .catch(e=>{NET.loading=null;throw new Error('load');});
+  return NET.loading;
+}
+function roomCode(){const L='ABCDEFGHJKMNPQRSTUVWXYZ';let c='';for(let i=0;i<3;i++)c+=L[Math.floor(Math.random()*L.length)];for(let i=0;i<3;i++)c+=Math.floor(Math.random()*10);return c;}
+function fmtCode(c){return c.slice(0,3)+'-'+c.slice(3);}
+function parseCode(s){const m=String(s||'').toUpperCase().replace(/[^A-Z0-9]/g,'').match(/^([A-Z]{3})(\d{3})$/);return m?m[1]+m[2]:null;}
+function inWorldState(){return G.state==='town'||G.state==='build'||G.state==='market'||G.state==='win';}
+function myState(){return {n:(cfg.name||'Player').slice(0,14),c:[cfg.base==='kai'?1:0,cfg.skin,cfg.hair,cfg.hairC,cfg.head,cfg.top,cfg.pants,cfg.shoes,cfg.acc],w:inWorldState()?G.world:'-',x:Math.round(P.x*100)/100,y:Math.round(P.y*100)/100,z:Math.round(P.z*100)/100,f:Math.round(P.face*100)/100};}
+function netJoin(code,create){
+  return netInit().then(()=>{
+    const ref=firebase.database().ref('rooms/'+code+'/players');
+    return ref.once('value').then(snap=>{
+      const n=snap.numChildren();
+      if(!create&&n===0)throw new Error('notfound');
+      if(create&&n>0)throw new Error('taken');
+      if(n>=8&&!snap.hasChild(NET.uid))throw new Error('full');
+      netLeave();
+      NET.room=code;NET.ref=ref;NET.me=ref.child(NET.uid);
+      NET.me.onDisconnect().remove();
+      NET.sent='';netSend(true);
+      ref.on('child_added',netPeer);ref.on('child_changed',netPeer);ref.on('child_removed',s=>netDrop(s.key));
+      netBadge();
+    });
+  });
+}
+function netLeave(){
+  if(!NET.ref)return;
+  try{NET.ref.off();NET.me.onDisconnect().cancel();NET.me.remove();}catch(e){}
+  Object.keys(NET.peers).forEach(netDrop);NET.room=null;NET.ref=null;NET.me=null;netBadge();
+}
+function netSend(force){if(!NET.me)return;const s=myState(),j=JSON.stringify(s);if(!force&&j===NET.sent)return;NET.sent=j;try{NET.me.set(s).catch(()=>{});}catch(e){}}
+function num(v,d){return typeof v==='number'&&isFinite(v)?Math.max(-500,Math.min(500,v)):d;}
+function netPeer(snap){
+  const id=snap.key;if(id===NET.uid)return;const v=snap.val();if(!v||typeof v!=='object')return;
+  let name=cleanName(typeof v.n==='string'?v.n:'').trim()||'Player';if(badName(name))name='Player';
+  const a=Array.isArray(v.c)?v.c:[],lim=[2,SKIN.length,5,HAIRC.length,4,TOPC.length,PANTC.length,SHOEC.length,4];
+  const c=lim.map((m,i)=>{const k=parseInt(a[i],10);return k>=0&&k<m?k:0;});
+  const key=name+'|'+c.join(',');
+  let p=NET.peers[id];
+  if(!p)p=NET.peers[id]={g:null,key:'',x:0,y:0,z:0,f:0,tx:0,ty:0,tz:0,tf:0,w:'',walk:0,fresh:true,name:name};
+  if(p.key!==key){if(p.g)scene.remove(p.g);p.g=makeChar({base:c[0]?'kai':'nova',skin:c[1],hair:c[2],hairC:c[3],head:c[4],top:c[5],pants:c[6],shoes:c[7],acc:c[8],name:name});p.g.visible=false;scene.add(p.g);p.key=key;p.name=name;}
+  p.w=typeof v.w==='string'?v.w:'';p.tx=num(v.x,0);p.ty=num(v.y,0);p.tz=num(v.z,0);p.tf=num(v.f,0);
+  if(p.fresh){p.x=p.tx;p.y=p.ty;p.z=p.tz;p.f=p.tf;p.fresh=false;toast(name+' joined the room');sfx('spark',3);}
+  netBadge();
+}
+NET.peerFn=netPeer;
+function netDrop(id){const p=NET.peers[id];if(!p)return;if(p.g)scene.remove(p.g);delete NET.peers[id];netBadge();}
+function netBadge(){
+  const n=Object.keys(NET.peers).length+1,b=$('roomBadge');
+  b.style.display=NET.room?'block':'none';
+  if(NET.room)b.textContent='Room '+fmtCode(NET.room)+' · '+n+(n>1?' players':' player');
+  mpDraw();
+}
+function netUpdate(t,dt){
+  if(NET.me&&t-NET.last>.14){NET.last=t;netSend(false);}
+  const inW=inWorldState();
+  for(const id in NET.peers){
+    const p=NET.peers[id];if(!p.g)continue;
+    const show=inW&&p.w===G.world;p.g.visible=show;if(!show)continue;
+    const k=Math.min(1,dt*10),ox=p.x,oz=p.z;
+    if(Math.hypot(p.tx-p.x,p.tz-p.z)>12){p.x=p.tx;p.z=p.tz;p.y=p.ty;}
+    p.x+=(p.tx-p.x)*k;p.y+=(p.ty-p.y)*k;p.z+=(p.tz-p.z)*k;
+    let d=p.tf-p.f;while(d>Math.PI)d-=Math.PI*2;while(d<-Math.PI)d+=Math.PI*2;p.f+=d*k;
+    const sp=Math.hypot(p.x-ox,p.z-oz)/Math.max(dt,.001);
+    if(sp>.6)p.walk+=dt*11;
+    const sw=sp>.6?Math.sin(p.walk)*.9:0,L=p.g.userData.legs,A=p.g.userData.arms;
+    L[0].rotation.x=sw;L[1].rotation.x=-sw;A[0].rotation.x=-sw*.8;A[1].rotation.x=sw*.8;
+    p.g.position.set(p.x,p.y,p.z);p.g.rotation.y=p.f;
+  }
+}
+/* friends panel */
+function mpMsg(s,ok){const e=$('mpMsg');e.textContent=s||'';e.style.color=ok?'#19E3C2':'#FF8FB3';}
+function mpDraw(){
+  const inRoom=!!NET.room;
+  $('mpOut').style.display=inRoom?'none':'block';$('mpIn').style.display=inRoom?'block':'none';
+  if(inRoom){$('mpCode').textContent=fmtCode(NET.room);const names=[(cfg.name||'You')+' (you)'].concat(Object.keys(NET.peers).map(k=>NET.peers[k].name));$('mpWho').textContent=names.join(' · ');}
+}
+function mpErr(e){
+  const m=e&&e.message;
+  mpMsg(m==='notfound'?'Room not found. Check the code.':m==='full'?'This room is full (8 players).':m==='taken'?'Please try again.':'Could not connect. Online play needs the public game link and an internet connection.');
+}
+function openMp(){G.help=true;pads(false);$('mp').style.display='flex';mpMsg('');mpDraw();if(NET.pending){$('mpInput').value=fmtCode(NET.pending);}}
+function closeMp(){G.help=false;$('mp').style.display='none';if((G.state==='town'||G.state==='build'||G.state==='market')&&!G.busy)pads(true);}
+function mpAfterJoin(){mpMsg('You are in. Share the code with your friends.',true);NET.pending=null;try{if(location.hash.indexOf('#room-')===0)history.replaceState(null,'',location.pathname);}catch(e){}}
+function mpCreate(){mpMsg('Creating a room...',true);netJoin(roomCode(),true).then(mpAfterJoin).catch(e=>{if(e&&e.message==='taken')return netJoin(roomCode(),true).then(mpAfterJoin);throw e;}).catch(mpErr);}
+function mpJoinClick(){const c=parseCode($('mpInput').value);if(!c){mpMsg('A room code looks like ABC-123.');return;}mpMsg('Joining...',true);netJoin(c,false).then(mpAfterJoin).catch(mpErr);}
+function mpShare(){
+  const url=location.origin+location.pathname+'#room-'+NET.room,text='Join my Giftwalkers room: '+fmtCode(NET.room);
+  const copy=()=>{try{navigator.clipboard.writeText(text+'  '+url).then(()=>mpMsg('Invite copied. Paste it to your friends.',true),()=>mpMsg('Room code: '+fmtCode(NET.room),true));}catch(e){mpMsg('Room code: '+fmtCode(NET.room),true);}};
+  try{if(navigator.share){navigator.share({title:'Giftwalkers',text:text,url:url}).catch(copy);return;}}catch(e){}
+  copy();
+}
+try{const m=location.hash.match(/^#room-([A-Za-z]{3}\d{3})$/);if(m)NET.pending=m[1].toUpperCase();}catch(e){}
+
 /* ---------- particles ---------- */
 const parts=[];for(let i=0;i<48;i++){const s=glow(0xffffff,.9,0);s.visible=false;scene.add(s);parts.push({s:s,l:0,vx:0,vy:0,vz:0,x:0,y:0,z:0});}
 function burst(x,y,z,color,n){let k=0;for(let i=0;i<parts.length;i++){const p=parts[i];if(p.l>0)continue;p.l=.7+Math.random()*.4;p.x=x;p.y=y;p.z=z;p.s.visible=true;p.s.material.color.setHex(color);const a=Math.random()*6.28,e=Math.random()*1.2,sp=4+Math.random()*5;p.vx=Math.cos(a)*Math.cos(e)*sp;p.vy=Math.sin(e)*sp+2;p.vz=Math.sin(a)*Math.cos(e)*sp;if(++k>=n)break;}}
@@ -734,7 +864,7 @@ function winGame(){G.state='win';G.busy=true;pads(false);gift.visible=false;setX
 
 /* ---------- input ---------- */
 const keys={};
-window.addEventListener('keydown',e=>{if(e.target&&e.target.tagName==='INPUT')return;keys[e.code]=true;if(e.code==='KeyE'||e.code==='KeyF')pulse();if(e.code==='Escape'&&G.help)closeHelp();if(e.code==='Space'){wantJump=true;e.preventDefault();}});
+window.addEventListener('keydown',e=>{if(e.target&&e.target.tagName==='INPUT')return;keys[e.code]=true;if(e.code==='KeyE'||e.code==='KeyF')pulse();if(e.code==='Escape'&&G.help){if($('mp').style.display==='flex')closeMp();else closeHelp();}if(e.code==='Space'){wantJump=true;e.preventDefault();}});
 window.addEventListener('keyup',e=>{keys[e.code]=false;});
 const joy=$('joy'),knob=$('knob');let jid=null;
 function joyMove(e){const r=joy.getBoundingClientRect();let dx=e.clientX-(r.left+r.width/2),dy=e.clientY-(r.top+r.height/2);const m=Math.hypot(dx,dy),mx=46;if(m>mx){dx*=mx/m;dy*=mx/m;}knob.style.transform='translate('+dx+'px,'+dy+'px)';jx=dx/mx;jz=dy/mx;}
@@ -746,6 +876,8 @@ $('jump').addEventListener('pointerdown',e=>{wantJump=true;e.preventDefault();})
 $('pulse').addEventListener('pointerdown',e=>{pulse();e.preventDefault();});
 function openHelp(){G.help=true;pads(false);$('help').style.display='flex';try{localStorage.setItem('eo_help','1');}catch(e){}}
 function closeHelp(){G.help=false;$('help').style.display='none';if((G.state==='town'||G.state==='build'||G.state==='market')&&!G.busy)pads(true);sfx('click');}
+$('mpBtn').addEventListener('click',openMp);$('frBtn').addEventListener('click',openMp);$('mpClose').addEventListener('click',closeMp);$('mpCreate').addEventListener('click',mpCreate);$('mpJoin').addEventListener('click',mpJoinClick);$('mpShare').addEventListener('click',mpShare);$('mpLeave').addEventListener('click',()=>{netLeave();mpMsg('You left the room.',true);});
+$('mpInput').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('mpInput').blur();mpJoinClick();}});
 $('how').addEventListener('click',openHelp);$('helpBtn').addEventListener('click',openHelp);$('helpOk').addEventListener('click',closeHelp);
 
 /* ---------- world logic ---------- */
@@ -823,8 +955,9 @@ function update(dt){
 }
 function offShades(){ACT.shades.forEach(s=>{s.on=false;s.dead=0;s.g.visible=false;});guide.visible=false;ring.visible=false;}
 let last=performance.now();
-function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;update(dt);actUpdate(G.t,dt,(G.state==='town'||G.state==='build'||G.state==='market')&&!G.busy&&!G.help);renderer.render(scene,camera);requestAnimationFrame(loop);}
+function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;update(dt);netUpdate(G.t,dt);actUpdate(G.t,dt,(G.state==='town'||G.state==='build'||G.state==='market')&&!G.busy&&!G.help);renderer.render(scene,camera);requestAnimationFrame(loop);}
 enterWorld('town');
+if(NET.pending)openMp();
 requestAnimationFrame(loop);
 })();
 </script>

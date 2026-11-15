@@ -63,15 +63,17 @@ h1{margin:0;font-weight:900;font-size:clamp(44px,11vw,96px);line-height:1;color:
 .ch{flex:none;font-family:inherit;color:#fff;background:rgba(255,255,255,.1);border:2px solid transparent;border-radius:999px;padding:9px 14px;font-size:14px;cursor:pointer;white-space:nowrap;min-height:40px}
 .ch.sel{border-color:#19E3C2;background:rgba(25,227,194,.2)}
 .ch.lock{opacity:.45}
-#nm{flex:1;min-width:0;font-family:inherit;font-size:17px;color:#fff;background:rgba(255,255,255,.1);border:2px solid rgba(255,255,255,.2);border-radius:12px;padding:10px 12px;user-select:text;-webkit-user-select:text;min-height:44px}
-#nm:focus{outline:none;border-color:#19E3C2}
+#nm,#mpInput{flex:1;min-width:0;font-family:inherit;font-size:17px;color:#fff;background:rgba(255,255,255,.1);border:2px solid rgba(255,255,255,.2);border-radius:12px;padding:10px 12px;user-select:text;-webkit-user-select:text;min-height:44px}
+#nm:focus,#mpInput:focus{outline:none;border-color:#19E3C2}
 #nmErr{color:#FF8FB3;font-size:13px;min-height:16px}
 #go{width:100%;margin-top:10px;background:#FFC93C;flex:none}
 #pulse{right:36px;bottom:146px;width:74px;height:74px;border-radius:50%;border:2px solid rgba(255,255,255,.3);background:rgba(25,227,194,.9);color:#0E1024;font-family:inherit;font-weight:700;font-size:14px;display:none}
 #hearts{font-size:20px;letter-spacing:3px;line-height:1}
 #timer{float:right;font-size:13px;opacity:.8;font-variant-numeric:tabular-nums}
 #hurt{inset:0;background:#ff2d55;opacity:0;pointer-events:none;transition:opacity .25s;z-index:6}
-#help{inset:0;z-index:12;display:none;align-items:center;justify-content:center;padding:16px;background:rgba(5,6,26,.86)}
+#help,#mp{inset:0;z-index:12;display:none;align-items:center;justify-content:center;padding:16px;background:rgba(5,6,26,.86)}
+#mpBox{max-width:460px;width:100%;max-height:92%;overflow-y:auto;touch-action:pan-y;padding:20px}
+#mpBox h2{margin:0 0 4px;font-size:26px;color:#FFC93C}
 #helpBox{max-width:560px;width:100%;max-height:92%;overflow-y:auto;touch-action:pan-y;padding:20px}
 #helpBox h2{margin:0 0 4px;font-size:26px;color:#FFC93C}
 .hl{display:flex;gap:12px;align-items:flex-start;padding:9px 0;border-top:1px solid rgba(255,255,255,.1)}
@@ -83,9 +85,9 @@ h1{margin:0;font-weight:900;font-size:clamp(44px,11vw,96px);line-height:1;color:
 </head>
 <body>
 <div class="ui" id="hud">
-  <div class="glass" id="obj"><div id="objEn"></div><div class="he" id="objHe"></div></div>
+  <div class="glass" id="obj"><div id="objEn"></div><div class="he" id="objHe"></div><div id="roomBadge" style="display:none;margin-top:6px;font-size:13px;font-weight:700;color:#FFC93C"></div></div>
   <div class="glass" id="stat"><div><span id="timer">0:00</span><span id="hearts"></span></div><div id="rank" style="margin-top:6px"></div><div id="bar"><div id="fill"></div></div><div id="cnt"></div>
-    <button class="mini" id="snd">Sound: on</button> <button class="mini" id="heBtn">Hebrew: on</button> <button class="mini" id="menu">Worlds</button> <button class="mini" id="helpBtn">Help</button></div>
+    <button class="mini" id="snd">Sound: on</button> <button class="mini" id="heBtn">Hebrew: on</button> <button class="mini" id="menu">Worlds</button> <button class="mini" id="helpBtn">Help</button> <button class="mini" id="frBtn">Friends</button></div>
 </div>
 <div class="ui" id="toast"></div>
 <div class="ui glass" id="dlg"><div id="who"></div><div id="say"></div><div class="he" id="sayHe"></div><button class="btn" id="next">Next</button></div>
@@ -98,6 +100,7 @@ h1{margin:0;font-weight:900;font-size:clamp(44px,11vw,96px);line-height:1;color:
   <div class="h1he" dir="ltr">A Thousand Worlds · אלף עולמות</div>
   <div class="tag">Every choice opens a world.</div>
   <button class="btn" id="start" style="font-size:22px;padding:14px 48px;background:#FFC93C">Play</button>
+  <button class="btn" id="mpBtn" style="background:#19E3C2">Play with friends · לשחק עם חברים</button>
   <button class="btn" id="how" style="background:rgba(255,255,255,.14);color:#fff">How to play · איך משחקים</button>
 </div>
 <div class="ui" id="custom"><div class="glass" id="panel">
@@ -131,6 +134,25 @@ h1{margin:0;font-weight:900;font-size:clamp(44px,11vw,96px);line-height:1;color:
   <div class="hl"><div class="hk" style="background:#fff">STARS</div><div class="ht">Finish a world for 1 star, keep all your hearts for 2, and beat the clock for 3.<div class="he">סיום עולם נותן כוכב אחד, סיום בלי לאבד לב נותן שניים, וסיום מהיר נותן שלושה.</div></div></div>
   <div class="hl"><div class="hk" style="background:#B48CFF">WORLDS</div><div class="ht">Lighthouse: collect sparks, find the compass, enter the gate. Builders: collect 6 blocks (two sit on floating stones) and cross the bridge. Market: buy crates, stock your stand, step on a price, and guard it from thieves.<div class="he">המגדלור: אספו ניצוצות, מצאו את המצפן והיכנסו לשער. הבונים: אספו 6 אבנים (שתיים על אבנים צפות) וחצו את הגשר. השוק: קנו ארגזים, מלאו את הדוכן, בחרו מחיר ושמרו עליו מגנבים.</div></div></div>
   <button class="btn" id="helpOk" style="width:100%;margin-top:12px;background:#FFC93C">Got it · הבנתי</button>
+</div></div>
+<div class="ui" id="mp"><div class="glass" id="mpBox">
+  <h2>Play with friends</h2>
+  <div class="he" style="font-size:17px;margin-bottom:8px">לשחק עם חברים</div>
+  <div id="mpOut">
+    <p class="ht" style="margin:6px 0 12px">Create a room and send the code to your friends, or join a room with a code you got. Up to 8 players.<span class="he" style="display:block">צרו חדר ושלחו את הקוד לחברים, או הצטרפו לחדר עם קוד שקיבלתם. עד 8 שחקנים.</span></p>
+    <button class="btn" id="mpCreate" style="width:100%">Create a room</button>
+    <div class="row" style="margin-top:12px"><input id="mpInput" maxlength="7" placeholder="ABC-123" autocomplete="off" autocapitalize="characters" enterkeyhint="go"><button class="btn" id="mpJoin" style="background:#FFC93C">Join</button></div>
+  </div>
+  <div id="mpIn" style="display:none">
+    <div class="ht">Your room code</div>
+    <div id="mpCode" style="font-size:44px;font-weight:900;color:#FFC93C;letter-spacing:3px"></div>
+    <div id="mpWho" class="ht" style="opacity:.85;margin:6px 0 12px"></div>
+    <button class="btn" id="mpShare" style="width:100%">Share invite</button>
+    <button class="btn" id="mpLeave" style="width:100%;margin-top:8px;background:rgba(255,255,255,.14);color:#fff">Leave room</button>
+    <p class="ht" style="opacity:.8;margin:10px 0 0">Friends appear when they are in the same world as you.<span class="he" style="display:block">חברים מופיעים כשהם באותו עולם שבו אתם נמצאים.</span></p>
+  </div>
+  <div id="mpMsg" style="min-height:20px;font-size:14px;margin-top:8px"></div>
+  <button class="btn" id="mpClose" style="width:100%;margin-top:8px;background:#fff">Close</button>
 </div></div>
 <div class="ui" id="fade"></div>
 <div class="ui" id="err">The 3D engine could not load. Check your connection and refresh the page.</div>
