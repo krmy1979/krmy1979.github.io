@@ -50,12 +50,13 @@ h1{margin:0;font-weight:900;font-size:clamp(44px,11vw,96px);line-height:1;color:
 .rw{display:flex;flex-direction:column;gap:8px;font-size:17px}
 .rw div{padding:9px 18px;border-radius:14px;background:rgba(255,255,255,.1)}
 #custom{inset:0;display:none;pointer-events:none}
-#panel{pointer-events:auto;position:absolute;left:10px;right:10px;bottom:10px;max-height:54%;overflow-y:auto;touch-action:pan-y;padding:14px 14px 16px}
+#panel{pointer-events:auto;position:absolute;left:10px;right:10px;bottom:10px;max-height:56%;display:flex;flex-direction:column;overflow:hidden;padding:14px 14px 14px}
+#rows{flex:1 1 auto;min-height:0;overflow-y:auto;touch-action:pan-y;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
 @media(min-width:820px){#panel{left:auto;right:16px;top:16px;bottom:16px;width:400px;max-height:none}}
 .ph{font-weight:700;font-size:19px;margin-bottom:6px}
 .row{display:flex;align-items:center;gap:10px;margin:8px 0}
 .lb{width:78px;flex:none;font-size:13px;opacity:.8}
-.opts{display:flex;gap:8px;overflow-x:auto;touch-action:pan-x;padding:3px 2px;flex:1;scrollbar-width:none}
+.opts{display:flex;gap:8px;overflow-x:auto;touch-action:pan-x pan-y;padding:3px 2px;flex:1;scrollbar-width:none}
 .opts::-webkit-scrollbar{display:none}
 .sw{flex:none;width:40px;height:40px;border-radius:50%;border:3px solid rgba(255,255,255,.15);cursor:pointer;padding:0}
 .sw.sel{border-color:#fff;box-shadow:0 0 0 2px #19E3C2}
@@ -65,7 +66,7 @@ h1{margin:0;font-weight:900;font-size:clamp(44px,11vw,96px);line-height:1;color:
 #nm{flex:1;min-width:0;font-family:inherit;font-size:17px;color:#fff;background:rgba(255,255,255,.1);border:2px solid rgba(255,255,255,.2);border-radius:12px;padding:10px 12px;user-select:text;-webkit-user-select:text;min-height:44px}
 #nm:focus{outline:none;border-color:#19E3C2}
 #nmErr{color:#FF8FB3;font-size:13px;min-height:16px}
-#go{width:100%;margin-top:8px;background:#FFC93C}
+#go{width:100%;margin-top:10px;background:#FFC93C;flex:none}
 #fade{inset:0;background:#fff;opacity:0;pointer-events:none;transition:opacity .7s;z-index:9}
 #err{inset:0;display:none;align-items:center;justify-content:center;padding:30px;text-align:center;font-size:18px;background:#05061a;z-index:20}
 </style>
@@ -89,7 +90,7 @@ h1{margin:0;font-weight:900;font-size:clamp(44px,11vw,96px);line-height:1;color:
 </div>
 <div class="ui" id="custom"><div class="glass" id="panel">
   <div class="ph">Create your walker <span class="he" style="display:inline">· עצבו את הדמות שלכם</span></div>
-  <div class="row"><span class="lb">Name</span><input id="nm" maxlength="14" placeholder="Your name" autocomplete="off" autocapitalize="words"></div>
+  <div class="row"><span class="lb">Name</span><input id="nm" maxlength="14" placeholder="Your name" autocomplete="off" autocapitalize="words" enterkeyhint="done"></div>
   <div id="nmErr"></div>
   <div id="rows"></div>
   <button class="btn" id="go">Enter the world</button>
@@ -540,7 +541,11 @@ function openCustom(){
   $('nm').value=cfg.name;$('nmErr').textContent='';rebuild();drawRows();snapCam();
 }
 $('nm').addEventListener('input',()=>{const v=cleanName($('nm').value);if(v!==$('nm').value)$('nm').value=v;cfg.name=v;$('nmErr').textContent=badName(v)?'Please pick a different name.':'';rebuild();});
+function kbDone(){try{$('nm').blur();}catch(e){}try{window.scrollTo(0,0);document.documentElement.scrollTop=0;document.body.scrollTop=0;}catch(e){}}
+$('nm').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();kbDone();}});
+$('nm').addEventListener('blur',()=>{setTimeout(()=>{try{window.scrollTo(0,0);}catch(e){}},60);});
 $('go').addEventListener('click',()=>{
+  kbDone();
   if(badName(cfg.name)){$('nmErr').textContent='Please pick a different name.';return;}
   if(!cfg.name.trim()){cfg.name='Walker'+Math.floor(100+Math.random()*900);}
   cfg.name=cfg.name.trim();save();if(rank>=2)openWorlds();else startGame();

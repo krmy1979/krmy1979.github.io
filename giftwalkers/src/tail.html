@@ -184,7 +184,11 @@ function openCustom(){
   $('nm').value=cfg.name;$('nmErr').textContent='';rebuild();drawRows();snapCam();
 }
 $('nm').addEventListener('input',()=>{const v=cleanName($('nm').value);if(v!==$('nm').value)$('nm').value=v;cfg.name=v;$('nmErr').textContent=badName(v)?'Please pick a different name.':'';rebuild();});
+function kbDone(){try{$('nm').blur();}catch(e){}try{window.scrollTo(0,0);document.documentElement.scrollTop=0;document.body.scrollTop=0;}catch(e){}}
+$('nm').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();kbDone();}});
+$('nm').addEventListener('blur',()=>{setTimeout(()=>{try{window.scrollTo(0,0);}catch(e){}},60);});
 $('go').addEventListener('click',()=>{
+  kbDone();
   if(badName(cfg.name)){$('nmErr').textContent='Please pick a different name.';return;}
   if(!cfg.name.trim()){cfg.name='Walker'+Math.floor(100+Math.random()*900);}
   cfg.name=cfg.name.trim();save();if(rank>=2)openWorlds();else startGame();
