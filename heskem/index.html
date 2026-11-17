@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0f6b5c">
+  <title>הסכם · לוח הורים</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- מסך כניסה -->
+  <section id="login" class="login" hidden>
+    <div class="login-card">
+      <div class="brand">
+        <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3 5 7v8c0 7 4.6 12 11 14 6.400-2 11-7 11-14V7L16 3Z" fill="currentColor"/><path d="m11 16 3.500 3.500L21 13" fill="none" stroke="#fff" stroke-width="2.500" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>הסכם</span>
+      </div>
+      <h1 id="login-title">כניסת הורים</h1>
+      <p class="muted">מכאן קובעים כמה זמן יש לכל ילד בכל אפליקציה, נותנים בונוס ונועלים שיחות.</p>
+      <form id="login-form" novalidate>
+        <label for="email">אימייל</label>
+        <input id="email" type="email" dir="ltr" autocomplete="email" required>
+        <label for="password">סיסמה</label>
+        <input id="password" type="password" dir="ltr" autocomplete="current-password" minlength="6" required>
+        <p id="login-error" class="field-error" role="alert" hidden></p>
+        <button id="login-submit" class="btn btn-primary btn-block" type="submit">כניסה</button>
+      </form>
+      <button id="login-toggle" class="btn-link" type="button">אין לי חשבון עדיין, פתח חשבון חדש</button>
+    </div>
+  </section>
+
+  <!-- האפליקציה -->
+  <div id="app" hidden>
+    <header class="topbar">
+      <div class="brand">
+        <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3 5 7v8c0 7 4.6 12 11 14 6.400-2 11-7 11-14V7L16 3Z" fill="currentColor"/><path d="m11 16 3.500 3.500L21 13" fill="none" stroke="#fff" stroke-width="2.500" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>הסכם</span>
+      </div>
+      <span id="demo-badge" class="pill pill-warn" hidden>מצב הדגמה</span>
+      <button id="signout" class="btn btn-quiet" type="button">יציאה</button>
+    </header>
+
+    <nav id="tabs" class="tabs" aria-label="ילדים"></nav>
+    <main id="main" class="main"></main>
+  </div>
+
+  <!-- חלון הוספת ילד -->
+  <dialog id="child-dialog">
+    <form id="child-form" method="dialog">
+      <h2>הוספת ילד</h2>
+      <label for="child-name">שם הילד</label>
+      <input id="child-name" type="text" dir="auto" maxlength="30" required>
+      <div class="dialog-actions">
+        <button class="btn btn-primary" type="submit" value="ok">הוסף</button>
+        <button class="btn btn-quiet" type="button" id="child-cancel">ביטול</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
