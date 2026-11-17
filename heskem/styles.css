@@ -235,6 +235,8 @@ details.more > summary {
 .inline-form label { margin-block-start: 0; font-size: 14px; }
 .time-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s3); padding-block: var(--s2) var(--s4); }
 .time-row input { width: 130px; }
+.time-row.tight { padding-block: 0; gap: var(--s2); }
+.time-row.tight input { width: 130px; }
 .number-row { display: flex; align-items: center; gap: var(--s3); padding-block: var(--s2); border-block-start: 1px solid var(--line); }
 .number-row .grow { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .row-actions { display: flex; flex-wrap: wrap; gap: var(--s2); }

@@ -88,9 +88,10 @@
         name: 'ילד לדוגמה א׳', pairCode: '48213907',
         policy: {
           lockAll: false, lockSettings: true,
+          downtime: { enabled: true, slots: { s1: { start: '08:00', end: '13:30' }, s2: { start: '21:00', end: '07:00' } } },
           apps: {
             'com,google,android,youtube': { limitMin: 60, bonusMin: 15, bonusDate: d },
-            'com,zhiliaoapp,musically': { limitMin: 30 },
+            'com,zhiliaoapp,musically': { limitMin: 30, open: { start: '16:00', end: '19:00' } },
             'com,roblox,client': { locked: true, limitMin: 45 }
           },
           calls: { locked: false, schedule: { enabled: true, start: '08:00', end: '13:30' },
@@ -309,6 +310,21 @@
         h('span', { class: bonus > 0 ? 'app-bonus' : 'app-minus', text: (bonus > 0 ? 'בונוס היום: ' + bonus : 'הורדה היום: ' + (-bonus)) + ' דק׳ ' }),
         h('button', { class: 'btn-link', type: 'button', onclick: function () { setPolicy('apps/' + key + '/bonusMin', 0); } }, 'אפס')));
     }
+
+    if (rule.open) {
+      var from = h('input', { type: 'time', value: rule.open.start || '16:00', 'aria-label': label + ': פתוח משעה',
+        onchange: function () { if (from.value) setPolicy('apps/' + key + '/open/start', from.value); } });
+      var to = h('input', { type: 'time', value: rule.open.end || '20:00', 'aria-label': label + ': פתוח עד שעה',
+        onchange: function () { if (to.value) setPolicy('apps/' + key + '/open/end', to.value); } });
+      row.appendChild(h('div', { class: 'time-row tight' },
+        h('span', { class: 'small', text: 'פתוח רק בין' }), from,
+        h('span', { class: 'small', text: 'ל-' }), to,
+        h('button', { class: 'btn-link', type: 'button', onclick: function () { setPolicy('apps/' + key + '/open', null); } }, 'בטל שעות')));
+    } else {
+      row.appendChild(h('div', { class: 'small' },
+        h('button', { class: 'btn-link', type: 'button',
+          onclick: function () { setPolicy('apps/' + key + '/open', { start: '16:00', end: '20:00' }); } }, 'הגבל לשעות מסוימות')));
+    }
     return row;
   }
 
@@ -326,7 +342,7 @@
       return {
         key: k, rule: rule, used: usage[k] || 0,
         label: (deviceApps[k] && deviceApps[k].label) || k.replace(/,/g, '.'),
-        active: !!rule.locked || typeof rule.limitMin === 'number' || (usage[k] || 0) > 0
+        active: !!rule.locked || !!rule.open || typeof rule.limitMin === 'number' || (usage[k] || 0) > 0
       };
     }).sort(function (a, b) { return (b.used - a.used) || a.label.localeCompare(b.label, 'he'); });
 
@@ -367,6 +383,42 @@
     if (restList.children.length) card.appendChild(rest);
     card.appendChild(none);
     if (state.filter) applyFilter();
+    return card;
+  }
+
+  function downtimeCard(child) {
+    var down = (child.policy && child.policy.downtime) || {};
+    var slots = down.slots || {};
+    var ids = Object.keys(slots);
+
+    var card = h('section', { class: 'card' },
+      h('h2', { text: 'שעות נעילה לטלפון' }),
+      h('p', { class: 'muted', text: 'בשעות האלה כל האפליקציות נעולות, למשל בזמן בית הספר ובלילה. החיוג נשאר פתוח לפי הגדרות השיחות.' }));
+
+    card.appendChild(switchRow('שעות נעילה קבועות', 'חוזר כל יום באותן שעות. הילד רואה אצלו מתי זה נפתח וננעל.', !!down.enabled,
+      function (v) {
+        var u = {};
+        u[childPath('policy/downtime/enabled')] = v;
+        if (v && !ids.length) u[childPath('policy/downtime/slots/' + backend.newKey())] = { start: '21:00', end: '07:00' };
+        write(u);
+      }));
+
+    if (down.enabled) {
+      ids.forEach(function (id, i) {
+        var slot = slots[id] || {};
+        var start = h('input', { type: 'time', value: slot.start || '21:00', 'aria-label': 'טווח ' + (i + 1) + ': משעה',
+          onchange: function () { if (start.value) setPolicy('downtime/slots/' + id + '/start', start.value); } });
+        var end = h('input', { type: 'time', value: slot.end || '07:00', 'aria-label': 'טווח ' + (i + 1) + ': עד שעה',
+          onchange: function () { if (end.value) setPolicy('downtime/slots/' + id + '/end', end.value); } });
+        card.appendChild(h('div', { class: 'time-row' },
+          h('span', { text: 'משעה' }), start, h('span', { text: 'עד שעה' }), end,
+          h('button', { class: 'btn btn-quiet', type: 'button', 'aria-label': 'הסר טווח ' + (i + 1),
+            onclick: function () { setPolicy('downtime/slots/' + id, null); } }, 'הסר')));
+      });
+      if (!ids.length) card.appendChild(h('p', { class: 'muted small', text: 'עדיין אין טווח שעות. הוסף טווח כדי שהנעילה תפעל.' }));
+      card.appendChild(h('button', { class: 'btn', type: 'button',
+        onclick: function () { setPolicy('downtime/slots/' + backend.newKey(), { start: '08:00', end: '13:30' }); } }, 'הוסף טווח שעות'));
+    }
     return card;
   }
 
@@ -486,6 +538,7 @@
     quick.appendChild(switchRow('נעילת ההגדרות', 'מונע מהילד לבטל הרשאות או להסיר את האפליקציה. להפעיל אחרי שסיימת את ההתקנה.', !!policy.lockSettings,
       function (v) { setPolicy('lockSettings', v); }));
     frag.appendChild(quick);
+    frag.appendChild(downtimeCard(child));
 
     frag.appendChild(appsCard(child));
     frag.appendChild(callsCard(child));
