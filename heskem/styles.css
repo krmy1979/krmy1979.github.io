@@ -83,6 +83,9 @@ bdi, .ltr { direction: ltr; unicode-bidi: isolate; }
 .btn-quiet:hover { background: var(--surface-2); color: var(--ink); }
 .btn-bonus { background: var(--bonus-soft); border-color: transparent; color: var(--bonus); font-weight: 700; padding-inline: var(--s3); }
 .btn-bonus:hover { background: var(--bonus-soft); border-color: var(--bonus); }
+.btn-minus { background: var(--danger-soft); border-color: transparent; color: var(--danger); font-weight: 700; padding-inline: var(--s3); }
+.btn-minus:hover { border-color: var(--danger); background: var(--danger-soft); }
+.app-minus { color: var(--danger); font-weight: 500; }
 .btn-block { width: 100%; }
 .btn-link {
   font: inherit; background: none; border: 0; padding: var(--s3) 0; min-height: 44px;

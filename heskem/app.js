@@ -5,7 +5,7 @@
   var cfg = window.HESKEM_FIREBASE_CONFIG || {};
   var DEMO = !cfg.apiKey;
   var LIMITS = [15, 30, 45, 60, 90, 120, 180, 240];
-  var BONUSES = [15, 30, 60];
+  var BONUSES = [-15, 15, 30, 60];
   var PERM_NAMES = {
     accessibility: 'שירות נגישות (נעילת אפליקציות ומדידת זמן)',
     admin: 'מנהל מכשיר (הגנה מפני הסרה)',
@@ -230,7 +230,9 @@
     var u = {};
     u[childPath('policy/apps/' + key + '/bonusMin')] = current + minutes;
     u[childPath('policy/apps/' + key + '/bonusDate')] = d;
-    write(u).then(function () { toast('נוספו ' + minutes + ' דקות בונוס להיום'); });
+    write(u).then(function () {
+      toast(minutes > 0 ? 'נוספו ' + minutes + ' דקות להיום' : 'ירדו ' + (-minutes) + ' דקות מהיום');
+    });
   }
 
   /* ---------- רכיבים ---------- */
@@ -248,7 +250,7 @@
     var d = today();
     var limit = (typeof rule.limitMin === 'number') ? rule.limitMin : null;
     var bonus = rule.bonusDate === d ? (rule.bonusMin || 0) : 0;
-    var total = limit === null ? null : limit + bonus;
+    var total = limit === null ? null : Math.max(0, limit + bonus);
     var over = total !== null && usedMin >= total;
 
     var stateText, stateClass = 'app-state';
@@ -290,9 +292,10 @@
     if (limit !== null) {
       BONUSES.forEach(function (m) {
         controls.appendChild(h('button', {
-          class: 'btn btn-bonus', type: 'button', 'aria-label': 'הוסף ' + m + ' דקות בונוס ל-' + label,
+          class: 'btn ' + (m > 0 ? 'btn-bonus' : 'btn-minus'), type: 'button',
+          'aria-label': (m > 0 ? 'הוסף ' + m + ' דקות ל-' : 'הורד ' + (-m) + ' דקות מ-') + label,
           onclick: function () { addBonus(key, rule, m); }
-        }, '+' + m));
+        }, (m > 0 ? '+' : '\u2212') + Math.abs(m)));
       });
     }
     controls.appendChild(h('button', {
@@ -301,10 +304,10 @@
     }, rule.locked ? 'פתח' : 'נעל עכשיו'));
     row.appendChild(controls);
 
-    if (bonus > 0) {
+    if (bonus !== 0) {
       row.appendChild(h('div', { class: 'small' },
-        h('span', { class: 'app-bonus', text: 'בונוס היום: ' + bonus + ' דק׳ ' }),
-        h('button', { class: 'btn-link', type: 'button', onclick: function () { setPolicy('apps/' + key + '/bonusMin', 0); } }, 'בטל בונוס')));
+        h('span', { class: bonus > 0 ? 'app-bonus' : 'app-minus', text: (bonus > 0 ? 'בונוס היום: ' + bonus : 'הורדה היום: ' + (-bonus)) + ' דק׳ ' }),
+        h('button', { class: 'btn-link', type: 'button', onclick: function () { setPolicy('apps/' + key + '/bonusMin', 0); } }, 'אפס')));
     }
     return row;
   }
