@@ -460,6 +460,12 @@
         : h('span', { class: 'pill pill-warn', text: 'ממתין לחיבור' }),
       info && info.model ? h('span', { class: 'muted small' }, h('bdi', { text: info.model })) : null));
 
+    if (online && info.current) {
+      var apps = (child.device && child.device.apps) || {};
+      var openLabel = (apps[info.current] && apps[info.current].label) || info.current.replace(/,/g, '.');
+      frag.appendChild(h('p', { class: 'muted small' }, 'פתוח עכשיו בטלפון: ', h('strong', { dir: 'auto', text: openLabel })));
+    }
+
     if (!info) frag.appendChild(pairCard(child));
 
     if (info && info.perms) {
