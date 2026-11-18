@@ -10,7 +10,8 @@
     accessibility: 'שירות נגישות (נעילת אפליקציות ומדידת זמן)',
     admin: 'מנהל מכשיר (הגנה מפני הסרה)',
     callScreening: 'סינון שיחות נכנסות',
-    callRedirection: 'חסימת שיחות יוצאות'
+    callRedirection: 'חסימת שיחות יוצאות',
+    location: 'מיקום (אפשר כל הזמן)'
   };
 
   var state = { user: null, family: null, childId: null, signup: false, filter: '', loadError: null };
@@ -88,6 +89,8 @@
         name: 'ילד לדוגמה א׳', pairCode: '48213907',
         policy: {
           lockAll: false, lockSettings: true,
+          location: { enabled: true, hoursOnly: true, start: '06:30', end: '08:30' },
+          places: { p1: { name: 'בית', lat: 31.6652, lng: 34.5701, r: 150 }, p2: { name: 'תחנת ההסעה', lat: 31.6688, lng: 34.5743, r: 150 } },
           downtime: { enabled: true, slots: { s1: { start: '08:00', end: '13:30' }, s2: { start: '21:00', end: '07:00' } } },
           apps: {
             'com,google,android,youtube': { limitMin: 60, bonusMin: 15, bonusDate: d },
@@ -104,6 +107,14 @@
             'com,roblox,client': { label: 'Roblox' }, 'com,whatsapp': { label: 'WhatsApp' },
             'com,android,chrome': { label: 'Chrome' }, 'com,google,android,apps,photos': { label: 'תמונות' },
             'com,spotify,music': { label: 'Spotify' }
+          },
+          location: {
+            last: { lat: 31.6688, lng: 34.5743, acc: 14, speed: 0.4, t: Date.now() - 50000 },
+            trail: {
+              m1: { lat: 31.6652, lng: 34.5701, t: Date.now() - 1500000 }, m2: { lat: 31.6655, lng: 34.5706, t: Date.now() - 1200000 },
+              m3: { lat: 31.6668, lng: 34.5722, t: Date.now() - 800000 }, m4: { lat: 31.6679, lng: 34.5735, t: Date.now() - 400000 },
+              m5: { lat: 31.6688, lng: 34.5743, t: Date.now() - 50000 }
+            }
           },
           usage: { date: d, apps: { 'com,google,android,youtube': 52, 'com,zhiliaoapp,musically': 31, 'com,whatsapp': 18, 'com,roblox,client': 12 } }
         }
@@ -422,6 +433,229 @@
     return card;
   }
 
+  /* ---------- מיקום ---------- */
+  var mapState = { childId: null, el: null, map: null, layers: null, centered: false };
+  var placing = null; // שם המקום שמחכה ללחיצה על המפה
+
+  function metersBetween(a, b) {
+    var R = 6371000, rad = Math.PI / 180;
+    var dLat = (b.lat - a.lat) * rad, dLng = (b.lng - a.lng) * rad;
+    var x = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(a.lat * rad) * Math.cos(b.lat * rad) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    return 2 * R * Math.asin(Math.sqrt(x));
+  }
+  function clock(ms) {
+    var d = new Date(ms);
+    return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+  }
+  // נקודות המסלול של היום, מהמוקדמת למאוחרת
+  function todayPoints(loc) {
+    var trail = (loc && loc.trail) || {};
+    var midnight = new Date();
+    midnight.setHours(0, 0, 0, 0);
+    return Object.keys(trail).map(function (k) { return trail[k]; })
+      .filter(function (p) { return p && typeof p.lat === 'number' && typeof p.lng === 'number' && p.t >= midnight.getTime(); })
+      .sort(function (a, b) { return a.t - b.t; });
+  }
+  // מתי נכנסו ויצאו מכל מקום קבוע היום
+  function placeEvents(points, places) {
+    var events = [];
+    Object.keys(places).forEach(function (id) {
+      var place = places[id];
+      if (!place || typeof place.lat !== 'number') return;
+      var inside = null;
+      points.forEach(function (p) {
+        var now = metersBetween(p, place) <= (place.r || 150);
+        if (inside !== null && now !== inside) events.push({ t: p.t, arrive: now, name: place.name || 'מקום' });
+        inside = now;
+      });
+    });
+    return events.sort(function (a, b) { return b.t - a.t; });
+  }
+
+  function locationMap(last, points, places) {
+    if (typeof L === 'undefined') {
+      return h('p', { class: 'muted small', text: 'המפה לא נטענה כרגע. אפשר לפתוח את המיקום בגוגל מפות.' });
+    }
+    if (mapState.childId !== state.childId || !mapState.map) {
+      if (mapState.map) mapState.map.remove();
+      var el = h('div', { class: 'map', dir: 'ltr', role: 'application', 'aria-label': 'מפת המיקום' });
+      var map = L.map(el);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19, attribution: '&copy; OpenStreetMap'
+      }).addTo(map);
+      map.on('click', function (e) {
+        if (!placing) return;
+        var name = placing;
+        placing = null;
+        setPolicy('places/' + backend.newKey(), { name: name, lat: e.latlng.lat, lng: e.latlng.lng, r: 150 });
+        toast('המקום "' + name + '" נשמר');
+      });
+      mapState = { childId: state.childId, el: el, map: map, layers: null, centered: false };
+    }
+    var m = mapState.map;
+    if (!mapState.centered) {
+      m.setView([last.lat, last.lng], 16);
+      mapState.centered = true;
+    }
+    if (mapState.layers) mapState.layers.remove();
+    var g = L.layerGroup().addTo(m);
+    mapState.layers = g;
+
+    Object.keys(places).forEach(function (id) {
+      var pl = places[id];
+      if (!pl || typeof pl.lat !== 'number') return;
+      L.circle([pl.lat, pl.lng], { radius: pl.r || 150, color: '#8f540b', weight: 1, fillOpacity: 0.12 })
+        .bindTooltip(pl.name || '', { permanent: true, direction: 'top' }).addTo(g);
+    });
+    var since = Date.now() - 3 * 3600000;
+    var line = points.filter(function (p) { return p.t >= since; }).map(function (p) { return [p.lat, p.lng]; });
+    if (line.length > 1) L.polyline(line, { color: '#0f6b5c', weight: 4, opacity: 0.7 }).addTo(g);
+    L.circle([last.lat, last.lng], { radius: Math.max(last.acc || 0, 10), color: '#0f6b5c', weight: 1, fillOpacity: 0.15 }).addTo(g);
+    L.circleMarker([last.lat, last.lng], { radius: 8, color: '#ffffff', weight: 3, fillColor: '#0f6b5c', fillOpacity: 1 }).addTo(g);
+
+    setTimeout(function () { if (mapState.map) mapState.map.invalidateSize(); }, 0);
+    return mapState.el;
+  }
+
+  // הטלפון דיווח שהוא נכבה, ומאז לא התקבל ממנו סימן חיים
+  function poweredOff(info) {
+    return !!(info && info.power && info.power.off && info.power.t &&
+      (!info.lastSeen || info.power.t >= info.lastSeen - 120000));
+  }
+  // "ב-07:35" אם זה היום, אחרת "לפני יומיים"
+  function whenText(ms) {
+    var midnight = new Date();
+    midnight.setHours(0, 0, 0, 0);
+    return ms >= midnight.getTime() ? 'ב-' + clock(ms) : ago(ms);
+  }
+
+  function locationCard(child) {
+    var policyLoc = (child.policy && child.policy.location) || {};
+    var places = (child.policy && child.policy.places) || {};
+    var loc = (child.device && child.device.location) || {};
+    var last = (loc.last && typeof loc.last.lat === 'number') ? loc.last : null;
+    var points = todayPoints(loc);
+    var info = (child.device && child.device.info) || {};
+    var off = poweredOff(info);
+    // אם הטלפון נכבה ודיווח מיקום ברגע הכיבוי, זה המיקום העדכני ביותר
+    if (off && typeof info.power.lat === 'number' && (!last || info.power.t > last.t)) {
+      last = { lat: info.power.lat, lng: info.power.lng, acc: 0, speed: 0, t: info.power.t };
+    }
+
+    var card = h('section', { class: 'card' },
+      h('h2', { text: 'מיקום' }),
+      h('p', { class: 'muted', text: 'רואים על מפה איפה הטלפון נמצא, ומתי יצא והגיע למקומות הקבועים.' }));
+
+    card.appendChild(switchRow('שיתוף מיקום', 'הטלפון שולח את המיקום שלו ללוח. הילד רואה אצלו התראה קבועה שהמיקום משותף.', !!policyLoc.enabled,
+      function (v) { setPolicy('location/enabled', v); }));
+    if (!policyLoc.enabled) return card;
+
+    card.appendChild(switchRow('רק בשעות מסוימות', 'חוסך סוללה. למשל רק בבוקר, בדרך לבית הספר.', !!policyLoc.hoursOnly,
+      function (v) {
+        var u = {};
+        u[childPath('policy/location/hoursOnly')] = v;
+        if (!policyLoc.start) u[childPath('policy/location/start')] = '06:30';
+        if (!policyLoc.end) u[childPath('policy/location/end')] = '08:30';
+        write(u);
+      }));
+    if (policyLoc.hoursOnly) {
+      var from = h('input', { type: 'time', value: policyLoc.start || '06:30', 'aria-label': 'שיתוף מיקום משעה',
+        onchange: function () { if (from.value) setPolicy('location/start', from.value); } });
+      var to = h('input', { type: 'time', value: policyLoc.end || '08:30', 'aria-label': 'שיתוף מיקום עד שעה',
+        onchange: function () { if (to.value) setPolicy('location/end', to.value); } });
+      card.appendChild(h('div', { class: 'time-row' }, h('span', { text: 'משעה' }), from, h('span', { text: 'עד שעה' }), to));
+    }
+
+    if (off) {
+      card.appendChild(h('p', { class: 'notice-line', role: 'status' },
+        h('strong', { text: 'הטלפון כובה ' + whenText(info.power.t) + '.' }),
+        last ? ' על המפה מוצג המיקום האחרון שלו.' : ''));
+    } else if (info.offlineAt && info.lastSeen && (Date.now() - info.lastSeen) > 3 * 60000) {
+      card.appendChild(h('p', { class: 'notice-line', role: 'status' },
+        h('strong', { text: 'אין קשר עם הטלפון מאז ' + clock(info.offlineAt) + '.' }),
+        ' ייתכן שאין לו אינטרנט או קליטה.'));
+    }
+
+    if (!last) {
+      card.appendChild(h('p', { class: 'empty', text: 'עדיין לא התקבל מיקום. פתח את "הסכם" בטלפון של הילד ואשר את הרשאת המיקום.' }));
+      return card;
+    }
+
+    var fresh = !off && (Date.now() - last.t) < 3 * 60000;
+    var status = 'עודכן ' + ago(last.t) + ' · דיוק כ-' + Math.round(last.acc || 0) + ' מ׳';
+    if (fresh) status += (last.speed > 1.5) ? ' · בתנועה, כ-' + Math.round(last.speed * 3.6) + ' קמ״ש' : ' · במקום';
+    card.appendChild(h('p', { class: fresh ? '' : 'muted' }, h('strong', { text: status })));
+
+    card.appendChild(locationMap(last, points, places));
+
+    var mapsUrl = 'https://www.google.com/maps?q=' + last.lat + ',' + last.lng;
+    var actions = h('div', { class: 'row-actions' },
+      h('a', { class: 'btn', href: mapsUrl, target: '_blank', rel: 'noopener' }, 'פתח בגוגל מפות'));
+    if (typeof L !== 'undefined') {
+      actions.appendChild(h('button', { class: 'btn', type: 'button',
+        onclick: function () { if (mapState.map) mapState.map.setView([last.lat, last.lng], 16); } }, 'מרכז על המיקום'));
+    }
+    card.appendChild(actions);
+
+    // אירועי היום
+    card.appendChild(h('h3', { class: 'gap-top', text: 'היום' }));
+    var events = placeEvents(points, places);
+    if (!Object.keys(places).length) {
+      card.appendChild(h('p', { class: 'muted small', text: 'הוסף מקומות קבועים (בית, תחנה, בית ספר) כדי לראות כאן שעות יציאה והגעה.' }));
+    } else if (!events.length) {
+      card.appendChild(h('p', { class: 'muted small', text: 'עדיין לא נרשמו היום יציאה או הגעה למקום קבוע.' }));
+    } else {
+      events.slice(0, 8).forEach(function (ev) {
+        card.appendChild(h('div', { class: 'number-row' },
+          h('bdi', { class: 'event-time', text: clock(ev.t) }),
+          h('span', { class: 'grow' }, (ev.arrive ? 'הגעה: ' : 'יציאה: '), h('strong', { dir: 'auto', text: ev.name }))));
+      });
+    }
+
+    // מקומות קבועים
+    card.appendChild(h('h3', { class: 'gap-top', text: 'מקומות קבועים' }));
+    Object.keys(places).forEach(function (id) {
+      var pl = places[id] || {};
+      card.appendChild(h('div', { class: 'number-row' },
+        h('span', { class: 'grow' }, h('strong', { dir: 'auto', text: pl.name || 'מקום' })),
+        h('button', { class: 'btn btn-quiet', type: 'button', 'aria-label': 'הסר את ' + (pl.name || 'המקום'),
+          onclick: function () { setPolicy('places/' + id, null); } }, 'הסר')));
+    });
+    var nameIn = h('input', { type: 'text', id: 'place-name', dir: 'auto', maxlength: '24', list: 'place-names' });
+    var names = h('datalist', { id: 'place-names' });
+    ['בית', 'תחנת ההסעה', 'בית הספר'].forEach(function (n) { names.appendChild(h('option', { value: n })); });
+    var err = h('p', { class: 'field-error', role: 'alert', hidden: true });
+    function placeName() {
+      var n = nameIn.value.trim();
+      if (!n) { err.textContent = 'כתוב קודם שם למקום, למשל "בית".'; err.hidden = false; nameIn.focus(); return null; }
+      err.hidden = true;
+      return n;
+    }
+    card.appendChild(h('div', { class: 'place-form' },
+      h('div', null, h('label', { for: 'place-name', text: 'שם המקום' }), nameIn, names),
+      h('button', { class: 'btn btn-primary', type: 'button',
+        onclick: function () {
+          var n = placeName();
+          if (!n) return;
+          nameIn.value = '';
+          nameIn.blur();
+          setPolicy('places/' + backend.newKey(), { name: n, lat: last.lat, lng: last.lng, r: 150 });
+          toast('המקום "' + n + '" נשמר במיקום הנוכחי של הטלפון');
+        } }, 'סמן במיקום הנוכחי של הטלפון'),
+      (typeof L !== 'undefined') ? h('button', { class: 'btn', type: 'button',
+        onclick: function () {
+          var n = placeName();
+          if (!n) return;
+          placing = n;
+          nameIn.value = '';
+          nameIn.blur();
+          toast('עכשיו לחץ על המפה במקום של "' + n + '"');
+        } }, 'סמן בלחיצה על המפה') : null));
+    card.appendChild(err);
+    return card;
+  }
+
   function callsCard(child) {
     var calls = (child.policy && child.policy.calls) || {};
     var sched = calls.schedule || {};
@@ -508,7 +742,9 @@
     frag.appendChild(h('div', { class: 'child-head' },
       h('h1', { dir: 'auto', text: child.name || 'ללא שם' }),
       info
-        ? h('span', { class: 'pill ' + (online ? 'pill-ok' : ''), text: online ? 'מחובר' : 'נראה לאחרונה ' + ago(info.lastSeen || 0) })
+        ? (poweredOff(info)
+          ? h('span', { class: 'pill pill-warn', text: 'כובה ' + whenText(info.power.t) })
+          : h('span', { class: 'pill ' + (online ? 'pill-ok' : ''), text: online ? 'מחובר' : 'נראה לאחרונה ' + ago(info.lastSeen || 0) }))
         : h('span', { class: 'pill pill-warn', text: 'ממתין לחיבור' }),
       info && info.model ? h('span', { class: 'muted small' }, h('bdi', { text: info.model })) : null));
 
@@ -540,6 +776,7 @@
     frag.appendChild(quick);
     frag.appendChild(downtimeCard(child));
 
+    frag.appendChild(locationCard(child));
     frag.appendChild(appsCard(child));
     frag.appendChild(callsCard(child));
 

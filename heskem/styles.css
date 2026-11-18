@@ -241,6 +241,15 @@ details.more > summary {
 .number-row .grow { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .row-actions { display: flex; flex-wrap: wrap; gap: var(--s2); }
 
+/* מיקום */
+.map { height: 320px; border-radius: var(--radius-s); border: 1px solid var(--line); margin-block: var(--s3); z-index: 0; background: var(--surface-2); }
+.notice-line { background: var(--bonus-soft); border-radius: var(--radius-s); padding: var(--s3) var(--s4); margin-block: var(--s3); }
+.gap-top { margin-block-start: var(--s5); margin-block-end: var(--s1); }
+.event-time { font-weight: 700; min-width: 52px; }
+.place-form { display: grid; gap: var(--s2); margin-block-start: var(--s3); }
+.place-form label { margin-block-start: 0; font-size: 14px; }
+a.btn { display: inline-flex; align-items: center; text-decoration: none; }
+
 /* חלון */
 dialog {
   border: 1px solid var(--line); border-radius: var(--radius);
