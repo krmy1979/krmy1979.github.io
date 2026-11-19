@@ -18,7 +18,7 @@ function netInit(){
 function roomCode(){const L='ABCDEFGHJKMNPQRSTUVWXYZ';let c='';for(let i=0;i<3;i++)c+=L[Math.floor(Math.random()*L.length)];for(let i=0;i<3;i++)c+=Math.floor(Math.random()*10);return c;}
 function fmtCode(c){return c.slice(0,3)+'-'+c.slice(3);}
 function parseCode(s){const m=String(s||'').toUpperCase().replace(/[^A-Z0-9]/g,'').match(/^([A-Z]{3})(\d{3})$/);return m?m[1]+m[2]:null;}
-function inWorldState(){return G.state==='town'||G.state==='build'||G.state==='market'||G.state==='win';}
+function inWorldState(){return isPlay()||G.state==='win';}
 function myState(){return {n:(cfg.name||'Player').slice(0,14),c:[cfg.base==='kai'?1:0,cfg.skin,cfg.hair,cfg.hairC,cfg.head,cfg.top,cfg.pants,cfg.shoes,cfg.acc],w:inWorldState()?G.world:'-',x:Math.round(P.x*100)/100,y:Math.round(P.y*100)/100,z:Math.round(P.z*100)/100,f:Math.round(P.face*100)/100};}
 function netJoin(code,create){
   return netInit().then(()=>{
@@ -80,6 +80,7 @@ function netUpdate(t,dt){
     const sw=sp>.6?Math.sin(p.walk)*.9:0,L=p.g.userData.legs,A=p.g.userData.arms;
     L[0].rotation.x=sw;L[1].rotation.x=-sw;A[0].rotation.x=-sw*.8;A[1].rotation.x=sw*.8;
     p.g.position.set(p.x,p.y,p.z);p.g.rotation.y=p.f;
+    if(Math.hypot(p.x-cam.x,p.z-cam.z)<4.5)p.g.visible=false;
   }
 }
 /* friends panel */
@@ -94,7 +95,7 @@ function mpErr(e){
   mpMsg(m==='notfound'?'Room not found. Check the code.':m==='full'?'This room is full (8 players).':m==='taken'?'Please try again.':'Could not connect. Online play needs the public game link and an internet connection.');
 }
 function openMp(){G.help=true;pads(false);$('mp').style.display='flex';mpMsg('');mpDraw();if(NET.pending){$('mpInput').value=fmtCode(NET.pending);}}
-function closeMp(){G.help=false;$('mp').style.display='none';if((G.state==='town'||G.state==='build'||G.state==='market')&&!G.busy)pads(true);}
+function closeMp(){G.help=false;$('mp').style.display='none';if((isPlay())&&!G.busy)pads(true);}
 function mpAfterJoin(){mpMsg('You are in. Share the code with your friends.',true);NET.pending=null;try{if(location.hash.indexOf('#room-')===0)history.replaceState(null,'',location.pathname);}catch(e){}}
 function mpCreate(){mpMsg('Creating a room...',true);netJoin(roomCode(),true).then(mpAfterJoin).catch(e=>{if(e&&e.message==='taken')return netJoin(roomCode(),true).then(mpAfterJoin);throw e;}).catch(mpErr);}
 function mpJoinClick(){const c=parseCode($('mpInput').value);if(!c){mpMsg('A room code looks like ABC-123.');return;}mpMsg('Joining...',true);netJoin(c,false).then(mpAfterJoin).catch(mpErr);}

@@ -10,7 +10,7 @@ const HAIRC=[0x1E1E2E,0x5a3a1e,0xE0B040,0x7B4DFF,0xFF4D8D,0x19E3C2,0xff6b2b,0xf4
 const TOPC=[0xFFC93C,0xFF5A3C,0x19E3C2,0x3D7BFF,0xFF4D8D,0x7B4DFF,0xf4f4f8,0x1E1E2E];
 const PANTC=[0x2F3A6B,0x2A3142,0x6b4a2f,0x4a7a55,0xb0b6d6];
 const SHOEC=[0xffffff,0xFF4D8D,0x19E3C2,0x1E1E2E];
-const PRESET={nova:{base:'nova',skin:3,hair:1,hairC:3,head:2,top:0,pants:0,shoes:0,acc:2},kai:{base:'kai',skin:1,hair:2,hairC:0,head:1,top:1,pants:1,shoes:0,acc:1}};
+const PRESET={nova:{base:'nova',skin:3,hair:1,hairC:3,head:2,top:0,pants:0,shoes:0,acc:2,pet:0},kai:{base:'kai',skin:1,hair:2,hairC:0,head:1,top:1,pants:1,shoes:0,acc:1,pet:0}};
 const ROWS=[
  ['Body','base',['Nova','Kai'],null],
  ['Skin','skin',null,SKIN],
@@ -20,14 +20,15 @@ const ROWS=[
  ['Top','top',null,TOPC],
  ['Pants','pants',null,PANTC],
  ['Shoes','shoes',null,SHOEC],
- ['Accessory','acc',['None','Backpack','Skateboard','Hoverboard'],null]];
-const LOCKS={head:{3:2},acc:{3:3}};
+ ['Accessory','acc',['None','Backpack','Skateboard','Hoverboard'],null],
+ ['Companion','pet',['None','Sprout'],null]];
+const LOCKS={head:{3:2},acc:{3:3},pet:{1:4}};
 function lockRank(k,i){return (LOCKS[k]&&LOCKS[k][i])||0;}
 let cfg=Object.assign({name:''},PRESET.nova),rank=1,heOn=true;
 try{const s=JSON.parse(localStorage.getItem('eo_cfg')||'null');if(s&&typeof s==='object'){ROWS.forEach(r=>{const k=r[1];if(k==='base'){if(s.base==='kai'||s.base==='nova')cfg.base=s.base;}else{const n=(r[2]||r[3]).length,v=parseInt(s[k],10);if(v>=0&&v<n)cfg[k]=v;}});if(typeof s.name==='string')cfg.name=s.name.slice(0,14);}
   rank=parseInt(localStorage.getItem('eo_rank')||'1',10)||1;heOn=localStorage.getItem('eo_he')!=='0';}catch(e){}
 function save(){try{localStorage.setItem('eo_cfg',JSON.stringify(cfg));localStorage.setItem('eo_rank',String(rank));localStorage.setItem('eo_he',heOn?'1':'0');}catch(e){}}
-if(cfg.head===3&&rank<2)cfg.head=0;if(cfg.acc===3&&rank<3)cfg.acc=0;
+if(cfg.head===3&&rank<2)cfg.head=0;if(cfg.acc===3&&rank<3)cfg.acc=0;if(cfg.pet===1&&rank<4)cfg.pet=0;
 window.__cfg=cfg;
 
 function rr(g,x,y,w,h,r){g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath();}
@@ -73,6 +74,7 @@ const P={x:0,y:0,z:40,vy:0,ground:true,face:Math.PI,walk:0,stepI:0};
 const AU={ctx:null,on:true,world:'town',step:0,next:0};
 const MUS={town:{bpm:92,ch:[[57,60,64],[53,57,60],[48,55,60],[55,59,62]],arp:[1,0,1,1,0,1,1,0],kick:false,bright:800,ambF:420,ambG:.11},
            market:{bpm:104,ch:[[62,65,69],[58,62,65],[53,57,60],[60,64,67]],arp:[1,0,1,1,1,0,1,1],kick:true,bright:1400,ambF:750,ambG:.05},
+           garden:{bpm:96,ch:[[65,69,72],[60,64,67],[62,65,69],[58,62,65]],arp:[1,0,1,0,1,1,0,1],kick:false,bright:1500,ambF:1600,ambG:.03},
            build:{bpm:118,ch:[[60,64,67],[55,59,62],[57,60,64],[53,57,60]],arp:[1,1,1,1,1,1,1,1],kick:true,bright:1900,ambF:1100,ambG:.035}};
 const mf=n=>440*Math.pow(2,(n-69)/12);
 function auInit(){
@@ -170,7 +172,7 @@ function drawRows(){
       else{b.className='ch'+(cur===i?' sel':'')+(locked?' lock':'');b.textContent=locked?v+' · Rank '+lr:v;}
       b.addEventListener('click',()=>{
         if(locked){toast('Unlocks at Rank '+lr);return;}
-        if(r[1]==='base'){const nm=cfg.name;Object.assign(cfg,PRESET[i===0?'nova':'kai']);cfg.name=nm;}else cfg[r[1]]=i;
+        if(r[1]==='base'){const nm=cfg.name,pt=cfg.pet;Object.assign(cfg,PRESET[i===0?'nova':'kai']);cfg.name=nm;cfg.pet=pt;}else cfg[r[1]]=i;
         sfx('click');rebuild();drawRows();
       });
       o.appendChild(b);
@@ -180,7 +182,7 @@ function drawRows(){
 }
 function openCustom(){
   auInit();
-  $('title').style.display='none';$('win').style.display='none';$('hud').style.display='none';$('custom').style.display='block';pads(false);
+  ['title','win','hud','worlds','help','mp'].forEach(id=>{$(id).style.display='none';});G.help=false;$('custom').style.display='block';pads(false);
   G.state='custom';G.busy=false;enterWorld('town');portal.visible=false;offShades();
   P.x=0;P.y=0;P.z=30;P.vy=0;P.face=0;
   $('nm').value=cfg.name;$('nmErr').textContent='';rebuild();drawRows();snapCam();
@@ -197,27 +199,28 @@ $('go').addEventListener('click',()=>{
 });
 $('start').addEventListener('click',openCustom);
 $('again').addEventListener('click',openWorlds);$('menu').addEventListener('click',()=>{if(rank>=2)openWorlds();else toast('Reach Rank 2 to travel between worlds');});$('wEdit').addEventListener('click',openCustom);
-$('nextW').addEventListener('click',()=>{if(G.world==='build')startMarket();else openWorlds();});
+$('nextW').addEventListener('click',()=>{if(G.world==='build')startMarket();else if(G.world==='market')startGarden();else openWorlds();});
 $('edit').addEventListener('click',openCustom);
 
 function enterWorld(name){
   G.world=name;
   const W={town:{sky:skyNight,fog:new T.FogExp2(0x141a4a,.0085),h:[0x6677dd,0x1a1030,.7],s:[0x9fb4ff,.75],e:1.15},
            build:{sky:skyDay,fog:new T.Fog(0xbfe8ff,90,420),h:[0xffffff,0xffc27a,.95],s:[0xfff1d0,1.25],e:1.0},
-           market:{sky:skySunset,fog:new T.Fog(0xff9f80,70,400),h:[0xffd0a0,0x804060,.9],s:[0xffc890,1.15],e:1.0}}[name];
-  town.visible=name==='town';build.visible=name==='build';market.visible=name==='market';
+           market:{sky:skySunset,fog:new T.Fog(0xff9f80,70,400),h:[0xffd0a0,0x804060,.9],s:[0xffc890,1.15],e:1.0},
+           garden:{sky:skyDawn,fog:new T.Fog(0xd9f1ff,90,420),h:[0xffffff,0x9fe0a0,1.0],s:[0xfff4dc,1.2],e:1.0}}[name];
+  town.visible=name==='town';build.visible=name==='build';market.visible=name==='market';garden.visible=name==='garden';
   sky.material.map=W.sky;sky.material.needsUpdate=true;scene.fog=W.fog;
   hemi.color.setHex(W.h[0]);hemi.groundColor.setHex(W.h[1]);hemi.intensity=W.h[2];
   sun.color.setHex(W.s[0]);sun.intensity=W.s[1];renderer.toneMappingExposure=W.e;
   auWorld(name);
 }
-const RANKS=['','1 · Awakened','2 · Pathwalker','3 · Gift Bearer'];
-function rankLabel(){$('rank').textContent='Rank '+RANKS[Math.min(3,rank)];}
-function updCnt(){if(G.world==='market')mkHud();else $('cnt').textContent=G.world==='build'?('Blocks '+G.blocks+'/6'):('Sparks '+G.sparks+'/5');}
+const RANKS=['','1 · Awakened','2 · Pathwalker','3 · Gift Bearer','4 · Bridge Builder'];
+function rankLabel(){$('rank').textContent='Rank '+RANKS[Math.min(4,Math.max(1,rank))];}
+function updCnt(){if(G.world==='market')mkHud();else if(G.world==='garden')gdHud();else $('cnt').textContent=G.world==='build'?('Blocks '+G.blocks+'/6'):('Sparks '+G.sparks+'/5');}
 function showGame(){auInit();rebuild();['title','win','custom','worlds'].forEach(id=>{$(id).style.display='none';});$('hud').style.display='flex';isTouch=('ontouchstart' in window)||navigator.maxTouchPoints>0;rankLabel();setXP(0);P.vy=0;P.y=0;P.face=Math.PI;}
 function openWorlds(){
   auInit();pads(false);offShades();G.state='worlds';G.busy=false;$('win').style.display='none';$('custom').style.display='none';$('title').style.display='none';$('worlds').style.display='flex';
-  const L=[['The Lighthouse','Story start · night in the harbor town',1,startGame,'town'],['World of Builders','Build a bridge to the gift',2,startBuild,'build'],['World of the Market','Run a stand and earn 40 coins',2,startMarket,'market'],['World of the Garden','Coming soon',99,null],['World of Words','Coming soon',99,null]];
+  const L=[['The Lighthouse','Story start · night in the harbor town',1,startGame,'town'],['World of Builders','Build a bridge to the gift',2,startBuild,'build'],['World of the Market','Run a stand and earn 40 coins',2,startMarket,'market'],['World of the Garden','Grow and harvest 8 crops',3,startGarden,'garden'],['World of Words','Coming soon',99,null],['World of Machines','Coming soon',99,null]];
   const box=$('wlist');box.innerHTML='';
   L.forEach(w=>{const b=document.createElement('button');const lock=rank<w[2];b.className='wb'+(lock?' lock':'');b.innerHTML=w[0]+(w[4]?' <b style="color:#FFC93C;float:right">'+starStr(stars[w[4]])+'</b>':'')+'<span>'+(lock&&w[2]<99?'Unlocks at Rank '+w[2]:w[1])+'</span>';if(!lock)b.addEventListener('click',()=>{sfx('click');w[3]();});box.appendChild(b);});
 }
@@ -234,9 +237,17 @@ function startMarket(){
   setObj('Earn <b>40 coins</b> at your stand','הרוויחו 40 מטבעות בדוכן שלכם');
   talk([['World of the Market','Here an idea becomes a business. Buy low, sell at a fair price, and watch what people are willing to pay.','כאן רעיון הופך לעסק. קונים בזול, מוכרים במחיר הוגן, ורואים כמה אנשים מוכנים לשלם.'],['The Compass','Buy crates from the supplier, carry them to your stand, then step on a price. Earn 40 coins.','קנו ארגזים מהספק, סחבו אותם לדוכן, ואז עמדו על מחיר. הרוויחו 40 מטבעות.'],['The Compass','A crate costs 4 coins and holds 3 items. Price too high and customers walk away.','ארגז עולה 4 מטבעות ויש בו 3 פריטים. מחיר גבוה מדי, והלקוחות הולכים.']]);
 }
-function showWin(n,he,st,rewards){rewards=['Stars: '+starStr(st)+'   Time '+Math.floor(ACT.time)+'s'].concat(rewards);rank=Math.max(rank,n);save();rankLabel();$('winRk').textContent='Rank '+RANKS[n];$('winHe').textContent=he;const b=$('winRw');b.innerHTML='';rewards.forEach(r=>{const d=document.createElement('div');d.textContent=r;b.appendChild(d);});$('nextW').style.display=G.world==='build'?'':'none';setTimeout(()=>{$('win').style.display='flex';},1100);}
+function showWin(n,he,st,rewards){rewards=['Stars: '+starStr(st)+'   Time '+Math.floor(ACT.time)+'s'].concat(rewards);rank=Math.max(rank,n);save();rankLabel();$('winRk').textContent='Rank '+RANKS[n];$('winHe').textContent=he;const b=$('winRw');b.innerHTML='';rewards.forEach(r=>{const d=document.createElement('div');d.textContent=r;b.appendChild(d);});$('nextW').style.display=(G.world==='build'||G.world==='market')?'':'none';setTimeout(()=>{$('win').style.display='flex';},1100);}
 function winMarket(){G.state='win';G.busy=true;pads(false);mkGift.visible=false;setXP(100);sfx('win');burst(0,3,6,0xFF4D8D,30);
-  showWin(3,'עליתם דרגה: נושאי מתנה',awardStars('market'),['Sold '+MK.sold+' items · '+MK.refused+' customers walked away','New ability: run a business','New item unlocked: Hoverboard','Next world: World of the Garden (coming soon)']);}
+  showWin(3,'עליתם דרגה: נושאי מתנה',awardStars('market'),['Sold '+MK.sold+' items · '+MK.refused+' customers walked away','New ability: run a business','New item unlocked: Hoverboard','Next world: World of the Garden']);}
+function startGarden(){
+  showGame();G.state='garden';gdReset();
+  enterWorld('garden');actReset('garden');P.x=0;P.z=13;snapCam();updCnt();
+  setObj('Grow and harvest <b>8 crops</b>','גדלו וקצרו 8 יבולים');
+  talk([['World of the Garden','Nothing here can be rushed. A seed needs water, time, and someone who comes back for it.','כאן אי אפשר למהר שום דבר. זרע צריך מים, זמן, ומישהו שחוזר אליו.'],['The Compass','Take seeds, plant them, and water each plant twice as it grows. Harvest 8 crops.','קחו זרעים, שתלו אותם, והשקו כל צמח פעמיים בזמן שהוא גדל. קצרו 8 יבולים.'],['The Compass','Shades wilt whatever is left alone. Guard your garden with PULSE.','הצללים מייבשים כל מה שנשאר לבד. שמרו על הגן עם PULSE.']]);
+}
+function winGarden(){G.state='win';G.busy=true;pads(false);gdGift.visible=false;setXP(100);sfx('win');burst(0,3,8,0x3DDC84,30);
+  showWin(4,'עליתם דרגה: בוני גשרים',awardStars('garden'),['Harvested 8 crops · '+GD.wilted+' plants wilted by Shades','New ability: grow and heal','New companion unlocked: Sprout (choose it in Edit character)','Next world: World of Words (coming soon)']);}
 function startGame(){
   showGame();
   G.state='town';G.sparks=0;G.blocks=0;G.hasCompass=false;
@@ -270,7 +281,7 @@ joy.addEventListener('pointerup',joyEnd);joy.addEventListener('pointercancel',jo
 $('jump').addEventListener('pointerdown',e=>{wantJump=true;e.preventDefault();});
 $('pulse').addEventListener('pointerdown',e=>{pulse();e.preventDefault();});
 function openHelp(){G.help=true;pads(false);$('help').style.display='flex';try{localStorage.setItem('eo_help','1');}catch(e){}}
-function closeHelp(){G.help=false;$('help').style.display='none';if((G.state==='town'||G.state==='build'||G.state==='market')&&!G.busy)pads(true);sfx('click');}
+function closeHelp(){G.help=false;$('help').style.display='none';if((isPlay())&&!G.busy)pads(true);sfx('click');}
 $('mpBtn').addEventListener('click',openMp);$('frBtn').addEventListener('click',openMp);$('mpClose').addEventListener('click',closeMp);$('mpCreate').addEventListener('click',mpCreate);$('mpJoin').addEventListener('click',mpJoinClick);$('mpShare').addEventListener('click',mpShare);$('mpLeave').addEventListener('click',()=>{netLeave();mpMsg('You left the room.',true);});
 $('mpInput').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('mpInput').blur();mpJoinClick();}});
 $('how').addEventListener('click',openHelp);$('helpBtn').addEventListener('click',openHelp);$('helpOk').addEventListener('click',closeHelp);
@@ -291,12 +302,13 @@ function update(dt){
   G.t+=dt;const t=G.t;
   let ix=(keys.ArrowRight||keys.KeyD?1:0)-(keys.ArrowLeft||keys.KeyA?1:0)+jx;
   let iz=(keys.ArrowDown||keys.KeyS?1:0)-(keys.ArrowUp||keys.KeyW?1:0)+jz;
-  const playing=(G.state==='town'||G.state==='build'||G.state==='market')&&!G.busy&&!G.help;
+  const playing=(isPlay())&&!G.busy&&!G.help;
   if(!playing){ix=0;iz=0;wantJump=false;}
   const mag=Math.hypot(ix,iz);if(mag>1){ix/=mag;iz/=mag;}
   const speed=9.5;
   let nx=P.x+ix*speed*dt,nz=P.z+iz*speed*dt;
   if(ACT.kt>0){ACT.kt-=dt;nx+=ACT.kx*dt;nz+=ACT.kz*dt;}
+  if(G.world==='garden'){let dx=nx-GDC.x,dz=nz-GDC.z,d=Math.hypot(dx,dz);if(d>GDC.r){nx=GDC.x+dx/d*GDC.r;nz=GDC.z+dz/d*GDC.r;}[[SEED.x,SEED.z,1.7],[WELL.x,WELL.z,2.2]].forEach(o=>{const ox=nx-o[0],oz=nz-o[1],od=Math.hypot(ox,oz);if(od<o[2]&&od>0){nx=o[0]+ox/od*o[2];nz=o[1]+oz/od*o[2];}});}
   if(G.world==='market'){let dx=nx-MKC.x,dz=nz-MKC.z,d=Math.hypot(dx,dz);if(d>MKC.r){nx=MKC.x+dx/d*MKC.r;nz=MKC.z+dz/d*MKC.r;}[[SUP.x,SUP.z,2.6],[STALL.x,STALL.z,2.9]].forEach(o=>{const ox=nx-o[0],oz=nz-o[1],od=Math.hypot(ox,oz);if(od<o[2]&&od>0){nx=o[0]+ox/od*o[2];nz=o[1]+oz/od*o[2];}});}
   if(G.world==='town'&&G.state!=='custom'){nx=Math.max(-7.6,Math.min(7.4,nx));nz=Math.max(-46.5,Math.min(44,nz));const dx=nx,dz=nz+44,d=Math.hypot(dx,dz);if(d<2.1&&compass.visible===false&&d>0){nx=dx/d*2.1;nz=dz/d*2.1-44;}}
   P.x=nx;P.z=nz;
@@ -340,6 +352,7 @@ function update(dt){
       if(playing&&Math.hypot(P.x+4.5,P.z+40)<2.6)toBuilders();}
     else portal.userData.s=0;
   }else if(w==='market'){mkUpdate(t,dt,playing);
+  }else if(w==='garden'){gdUpdate(t,dt,playing);
   }else{
     blocks.forEach((b,i)=>{if(!b.on)return;b.g.rotation.y=t*1.5+i;b.g.position.y=(b.y||0)+1.5+Math.sin(t*2+i)*.25;
       if(playing&&Math.abs(P.y-(b.y||0))<2.5&&Math.hypot(P.x-b.x,P.z-b.z)<1.8){b.on=false;b.g.visible=false;const s=segs[G.blocks];s.on=true;s.m.visible=true;G.blocks++;setXP(G.xp+7);updCnt();sfx('block',G.blocks);burst(b.x,1.6,b.z,0xFFC93C,12);toast(G.blocks<6?('Block '+G.blocks+' placed on the bridge'):'The bridge is complete!');if(G.blocks===6)setObj('Cross the bridge to the <b>gift</b>','חצו את הגשר אל המתנה');}});
@@ -350,7 +363,24 @@ function update(dt){
 }
 function offShades(){ACT.shades.forEach(s=>{s.on=false;s.dead=0;s.g.visible=false;});guide.visible=false;ring.visible=false;}
 let last=performance.now();
-function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;update(dt);netUpdate(G.t,dt);actUpdate(G.t,dt,(G.state==='town'||G.state==='build'||G.state==='market')&&!G.busy&&!G.help);renderer.render(scene,camera);requestAnimationFrame(loop);}
+let loopErr=0;
+function safe(f){try{f();}catch(e){if(loopErr<5){loopErr++;try{console.error(e);}catch(x){}}}}
+function loop(now){
+  const dt=Math.min(.05,(now-last)/1000);last=now;
+  safe(()=>update(dt));safe(()=>netUpdate(G.t,dt));safe(()=>actUpdate(G.t,dt,isPlay()&&!G.busy&&!G.help));safe(()=>petUpdate(G.t,dt));safe(()=>labelsUpdate(dt));safe(()=>renderer.render(scene,camera));
+  requestAnimationFrame(loop);
+}
+/* iPhone: stop pinch and double-tap from zooming the page (zoom pushes the buttons off screen) */
+['gesturestart','gesturechange','gestureend'].forEach(ev=>document.addEventListener(ev,e=>e.preventDefault(),{passive:false}));
+function inScroller(el){return !!(el&&el.closest&&el.closest('#rows,#helpBox,#mpBox'));}
+document.addEventListener('touchmove',e=>{if(e.touches.length>1&&!inScroller(e.target))e.preventDefault();},{passive:false});
+let lastTap=0;
+document.addEventListener('touchend',e=>{const n=Date.now(),el=e.target;if(n-lastTap<350&&el&&(el.tagName==='CANVAS'||(el.closest&&el.closest('#joy,#jump,#pulse'))))e.preventDefault();lastTap=n;},{passive:false});
+document.addEventListener('dblclick',e=>e.preventDefault());
+(function(){const vp=document.querySelector('meta[name=viewport]');if(!vp||!window.visualViewport)return;let busyVp=false;
+  visualViewport.addEventListener('resize',()=>{if(busyVp||visualViewport.scale<1.03)return;busyVp=true;vp.setAttribute('content','width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no');try{window.scrollTo(0,0);}catch(e){}setTimeout(()=>{busyVp=false;},400);});})();
+/* if a world change is interrupted, never leave the white screen up */
+setInterval(()=>{const f=$('fade');if(f.style.opacity==='1'){if(!f._t)f._t=Date.now();else if(Date.now()-f._t>4000){f.style.opacity=0;f._t=0;if(isPlay()&&$('dlg').style.display!=='block'){G.busy=false;pads(true);}}}else f._t=0;},1000);
 enterWorld('town');
 if(NET.pending)openMp();
 requestAnimationFrame(loop);

@@ -58,7 +58,8 @@ let mkGift,crate;
 })();
 function mkHud(){$('cnt').textContent='Coins '+MK.coins+' · Stock '+MK.stock+' · Price '+MK.price;}
 function mkReset(){MK.coins=12;MK.stock=0;MK.price=5;MK.carry=0;MK.sold=0;MK.refused=0;MK.cool=0;MK.spawn=2;MK.giftOn=false;MK.done=false;MK.npcs.forEach(n=>{n.on=false;n.g.visible=false;});mkGift.visible=false;}
-function floatText(text,x,y,z){const s=nameTag(text);s.position.set(x,y,z);s.scale.set(3.2,.8,1);market.add(s);MK.labels.push({s:s,l:1.4,y:y});}
+function floatText(text,x,y,z){const s=nameTag(text);s.position.set(x,y,z);s.scale.set(3.2,.8,1);scene.add(s);MK.labels.push({s:s,l:1.4,y:y});}
+function labelsUpdate(dt){for(let i=MK.labels.length-1;i>=0;i--){const L=MK.labels[i];L.l-=dt;L.y+=dt*1.3;L.s.position.y=L.y;L.s.material.opacity=Math.max(0,Math.min(1,L.l*2));if(L.l<=0){scene.remove(L.s);try{L.s.material.map.dispose();L.s.material.dispose();}catch(e){}MK.labels.splice(i,1);}}}
 function mkUpdate(t,dt,playing){
   crate.visible=MK.carry>0;if(MK.carry>0)crate.position.set(P.x+Math.sin(P.face)*.95,P.y+1.9,P.z+Math.cos(P.face)*.95);
   MK.cool-=dt;
@@ -89,7 +90,6 @@ function mkUpdate(t,dt,playing){
     }else{n.on=false;n.g.visible=false;}
     n.g.position.set(n.x,(n.st===1&&n.wait>0)?0:Math.abs(Math.sin(t*9+i))*.16,n.z);
   });
-  for(let i=MK.labels.length-1;i>=0;i--){const L=MK.labels[i];L.l-=dt;L.y+=dt*1.3;L.s.position.y=L.y;L.s.material.opacity=Math.max(0,Math.min(1,L.l*2));if(L.l<=0){market.remove(L.s);try{L.s.material.map.dispose();L.s.material.dispose();}catch(e){}MK.labels.splice(i,1);}}
   if(!MK.giftOn&&MK.coins>=40){MK.giftOn=true;mkGift.visible=true;setObj('You did it! Collect the <b>gift</b> in the plaza','הצלחתם! אספו את המתנה בכיכר');sfx('compass');burst(0,3,6,0xFF4D8D,24);}
   if(MK.giftOn){mkGift.rotation.y=t*1.2;mkGift.position.y=3+Math.sin(t*1.8)*.3;if(playing&&!MK.done&&Math.hypot(P.x,P.z-6)<2.8){MK.done=true;winMarket();}}
 }
