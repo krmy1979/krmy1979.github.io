@@ -16,19 +16,19 @@ const ROWS=[
  ['Skin','skin',null,SKIN],
  ['Hair','hair',['Short','Ponytail','Spiky','Curly','Long'],null],
  ['Hair color','hairC',null,HAIRC],
- ['Headwear','head',['None','Cap','Headphones','Builder helmet'],null],
+ ['Headwear','head',['None','Cap','Headphones','Builder helmet','Star crown'],null],
  ['Top','top',null,TOPC],
  ['Pants','pants',null,PANTC],
  ['Shoes','shoes',null,SHOEC],
  ['Accessory','acc',['None','Backpack','Skateboard','Hoverboard'],null],
- ['Companion','pet',['None','Sprout'],null]];
-const LOCKS={head:{3:2},acc:{3:3},pet:{1:4}};
+ ['Companion','pet',['None','Sprout','Robo'],null]];
+const LOCKS={head:{3:2,4:5},acc:{3:3},pet:{1:4,2:6}};
 function lockRank(k,i){return (LOCKS[k]&&LOCKS[k][i])||0;}
 let cfg=Object.assign({name:''},PRESET.nova),rank=1,heOn=true;
 try{const s=JSON.parse(localStorage.getItem('eo_cfg')||'null');if(s&&typeof s==='object'){ROWS.forEach(r=>{const k=r[1];if(k==='base'){if(s.base==='kai'||s.base==='nova')cfg.base=s.base;}else{const n=(r[2]||r[3]).length,v=parseInt(s[k],10);if(v>=0&&v<n)cfg[k]=v;}});if(typeof s.name==='string')cfg.name=s.name.slice(0,14);}
   rank=parseInt(localStorage.getItem('eo_rank')||'1',10)||1;heOn=localStorage.getItem('eo_he')!=='0';}catch(e){}
 function save(){try{localStorage.setItem('eo_cfg',JSON.stringify(cfg));localStorage.setItem('eo_rank',String(rank));localStorage.setItem('eo_he',heOn?'1':'0');}catch(e){}}
-if(cfg.head===3&&rank<2)cfg.head=0;if(cfg.acc===3&&rank<3)cfg.acc=0;if(cfg.pet===1&&rank<4)cfg.pet=0;
+if(cfg.head===3&&rank<2)cfg.head=0;if(cfg.acc===3&&rank<3)cfg.acc=0;if(cfg.pet===1&&rank<4)cfg.pet=0;if(cfg.pet===2&&rank<6)cfg.pet=0;if(cfg.head===4&&rank<5)cfg.head=0;
 window.__cfg=cfg;
 
 function rr(g,x,y,w,h,r){g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath();}
@@ -57,6 +57,7 @@ function makeChar(c){
   if(c.head===1){mesh(new T.SphereGeometry(.73,22,14,0,Math.PI*2,0,Math.PI*.5),std(0x3D7BFF,{roughness:.5}),0,2.72,0,g);mesh(new T.BoxGeometry(.72,.06,.5),std(0x2B5FD6),0,2.74,-.84,g);}
   if(c.head===2){const b=mesh(new T.TorusGeometry(.7,.07,8,22,Math.PI),std(0x19E3C2,{emissive:0x19E3C2,emissiveIntensity:.35}),0,2.62,0,g);[-.7,.7].forEach(x=>{const e=mesh(new T.CylinderGeometry(.2,.2,.14,12),std(0x19E3C2,{emissive:0x19E3C2,emissiveIntensity:.35}),x,2.62,0,g);e.rotation.z=Math.PI/2;});}
   if(c.head===3){mesh(new T.SphereGeometry(.76,22,14,0,Math.PI*2,0,Math.PI*.5),std(0xFFC93C,{roughness:.3,metalness:.2}),0,2.74,0,g);mesh(new T.BoxGeometry(.9,.06,.4),std(0xE0A800),0,2.76,.72,g);mesh(new T.BoxGeometry(.16,.16,.1),std(0xffffff,{emissive:0xffffff,emissiveIntensity:1}),0,2.98,.72,g,false);}
+  if(c.head===4){const cm=std(0xFFC93C,{metalness:.8,roughness:.2,emissive:0xFFC93C,emissiveIntensity:.25});const tr=mesh(new T.TorusGeometry(.52,.07,8,22),cm,0,3.12,0,g);tr.rotation.x=Math.PI/2;for(let k=0;k<5;k++){const a=k/5*Math.PI*2;mesh(new T.ConeGeometry(.1,.3,4),cm,Math.cos(a)*.52,3.3,Math.sin(a)*.52,g);}}
   // accessory
   if(c.acc===1){mesh(new T.BoxGeometry(.86,.95,.38),std(0x3D7BFF,{roughness:.5}),0,1.62,-.66,g);mesh(new T.BoxGeometry(.5,.3,.1),std(0xFFC93C),0,1.45,-.88,g,false);}
   if(c.acc===2){const b=mesh(new T.BoxGeometry(.5,1.8,.1),std(0xFF4D8D,{roughness:.4}),0,1.75,-.68,g);b.rotation.z=.35;}
@@ -74,6 +75,8 @@ const P={x:0,y:0,z:40,vy:0,ground:true,face:Math.PI,walk:0,stepI:0};
 const AU={ctx:null,on:true,world:'town',step:0,next:0};
 const MUS={town:{bpm:92,ch:[[57,60,64],[53,57,60],[48,55,60],[55,59,62]],arp:[1,0,1,1,0,1,1,0],kick:false,bright:800,ambF:420,ambG:.11},
            market:{bpm:104,ch:[[62,65,69],[58,62,65],[53,57,60],[60,64,67]],arp:[1,0,1,1,1,0,1,1],kick:true,bright:1400,ambF:750,ambG:.05},
+           words:{bpm:88,ch:[[57,60,64],[53,57,60],[60,64,67],[55,59,62]],arp:[1,1,0,1,1,0,1,0],kick:false,bright:1100,ambF:600,ambG:.04},
+           machines:{bpm:126,ch:[[52,55,59],[48,52,55],[50,53,57],[47,50,54]],arp:[1,1,1,0,1,1,1,0],kick:true,bright:2400,ambF:300,ambG:.03},
            garden:{bpm:96,ch:[[65,69,72],[60,64,67],[62,65,69],[58,62,65]],arp:[1,0,1,0,1,1,0,1],kick:false,bright:1500,ambF:1600,ambG:.03},
            build:{bpm:118,ch:[[60,64,67],[55,59,62],[57,60,64],[53,57,60]],arp:[1,1,1,1,1,1,1,1],kick:true,bright:1900,ambF:1100,ambG:.035}};
 const mf=n=>440*Math.pow(2,(n-69)/12);
@@ -199,7 +202,7 @@ $('go').addEventListener('click',()=>{
 });
 $('start').addEventListener('click',openCustom);
 $('again').addEventListener('click',openWorlds);$('menu').addEventListener('click',()=>{if(rank>=2)openWorlds();else toast('Reach Rank 2 to travel between worlds');});$('wEdit').addEventListener('click',openCustom);
-$('nextW').addEventListener('click',()=>{if(G.world==='build')startMarket();else if(G.world==='market')startGarden();else openWorlds();});
+$('nextW').addEventListener('click',()=>{if(G.world==='build')startMarket();else if(G.world==='market')startGarden();else if(G.world==='garden')startWords();else if(G.world==='words')startMachines();else openWorlds();});
 $('edit').addEventListener('click',openCustom);
 
 function enterWorld(name){
@@ -207,20 +210,23 @@ function enterWorld(name){
   const W={town:{sky:skyNight,fog:new T.FogExp2(0x141a4a,.0085),h:[0x6677dd,0x1a1030,.7],s:[0x9fb4ff,.75],e:1.15},
            build:{sky:skyDay,fog:new T.Fog(0xbfe8ff,90,420),h:[0xffffff,0xffc27a,.95],s:[0xfff1d0,1.25],e:1.0},
            market:{sky:skySunset,fog:new T.Fog(0xff9f80,70,400),h:[0xffd0a0,0x804060,.9],s:[0xffc890,1.15],e:1.0},
-           garden:{sky:skyDawn,fog:new T.Fog(0xd9f1ff,90,420),h:[0xffffff,0x9fe0a0,1.0],s:[0xfff4dc,1.2],e:1.0}}[name];
-  town.visible=name==='town';build.visible=name==='build';market.visible=name==='market';garden.visible=name==='garden';
+           garden:{sky:skyDawn,fog:new T.Fog(0xd9f1ff,90,420),h:[0xffffff,0x9fe0a0,1.0],s:[0xfff4dc,1.2],e:1.0},
+           words:{sky:skyDusk,fog:new T.Fog(0x7a4ab8,70,380),h:[0xe0c8ff,0x4a2a7a,.9],s:[0xffd0f0,1.0],e:1.05},
+           machines:{sky:skyTech,fog:new T.FogExp2(0x06224a,.007),h:[0x7fd8ff,0x101a33,.8],s:[0xbfe8ff,.9],e:1.15}}[name];
+  if(name!=='words')wdHide();if(name!=='machines')mcHide();
+  town.visible=name==='town';build.visible=name==='build';market.visible=name==='market';garden.visible=name==='garden';words.visible=name==='words';machines.visible=name==='machines';
   sky.material.map=W.sky;sky.material.needsUpdate=true;scene.fog=W.fog;
   hemi.color.setHex(W.h[0]);hemi.groundColor.setHex(W.h[1]);hemi.intensity=W.h[2];
   sun.color.setHex(W.s[0]);sun.intensity=W.s[1];renderer.toneMappingExposure=W.e;
   auWorld(name);
 }
-const RANKS=['','1 · Awakened','2 · Pathwalker','3 · Gift Bearer','4 · Bridge Builder'];
-function rankLabel(){$('rank').textContent='Rank '+RANKS[Math.min(4,Math.max(1,rank))];}
-function updCnt(){if(G.world==='market')mkHud();else if(G.world==='garden')gdHud();else $('cnt').textContent=G.world==='build'?('Blocks '+G.blocks+'/6'):('Sparks '+G.sparks+'/5');}
+const RANKS=['','1 · Awakened','2 · Pathwalker','3 · Gift Bearer','4 · Bridge Builder','5 · Gatekeeper','6 · World Lighter'];
+function rankLabel(){$('rank').textContent='Rank '+RANKS[Math.min(6,Math.max(1,rank))];}
+function updCnt(){if(G.world==='market')mkHud();else if(G.world==='garden')gdHud();else if(G.world==='words')wdHud();else if(G.world==='machines')mcHud();else $('cnt').textContent=G.world==='build'?('Blocks '+G.blocks+'/6'):('Sparks '+G.sparks+'/5');}
 function showGame(){auInit();rebuild();['title','win','custom','worlds'].forEach(id=>{$(id).style.display='none';});$('hud').style.display='flex';isTouch=('ontouchstart' in window)||navigator.maxTouchPoints>0;rankLabel();setXP(0);P.vy=0;P.y=0;P.face=Math.PI;}
 function openWorlds(){
   auInit();pads(false);offShades();G.state='worlds';G.busy=false;$('win').style.display='none';$('custom').style.display='none';$('title').style.display='none';$('worlds').style.display='flex';
-  const L=[['The Lighthouse','Story start · night in the harbor town',1,startGame,'town'],['World of Builders','Build a bridge to the gift',2,startBuild,'build'],['World of the Market','Run a stand and earn 40 coins',2,startMarket,'market'],['World of the Garden','Grow and harvest 8 crops',3,startGarden,'garden'],['World of Words','Coming soon',99,null],['World of Machines','Coming soon',99,null]];
+  const L=[['The Lighthouse','Story start · night in the harbor town',1,startGame,'town'],['World of Builders','Build a bridge to the gift',2,startBuild,'build'],['World of the Market','Run a stand and earn 40 coins',2,startMarket,'market'],['World of the Garden','Grow and harvest 8 crops',3,startGarden,'garden'],['World of Words','Return 6 lost words',4,startWords,'words'],['World of Machines','Program the robot',5,startMachines,'machines'],['World of Mirrors','Coming soon',99,null]];
   const box=$('wlist');box.innerHTML='';
   L.forEach(w=>{const b=document.createElement('button');const lock=rank<w[2];b.className='wb'+(lock?' lock':'');b.innerHTML=w[0]+(w[4]?' <b style="color:#FFC93C;float:right">'+starStr(stars[w[4]])+'</b>':'')+'<span>'+(lock&&w[2]<99?'Unlocks at Rank '+w[2]:w[1])+'</span>';if(!lock)b.addEventListener('click',()=>{sfx('click');w[3]();});box.appendChild(b);});
 }
@@ -237,7 +243,7 @@ function startMarket(){
   setObj('Earn <b>40 coins</b> at your stand','הרוויחו 40 מטבעות בדוכן שלכם');
   talk([['World of the Market','Here an idea becomes a business. Buy low, sell at a fair price, and watch what people are willing to pay.','כאן רעיון הופך לעסק. קונים בזול, מוכרים במחיר הוגן, ורואים כמה אנשים מוכנים לשלם.'],['The Compass','Buy crates from the supplier, carry them to your stand, then step on a price. Earn 40 coins.','קנו ארגזים מהספק, סחבו אותם לדוכן, ואז עמדו על מחיר. הרוויחו 40 מטבעות.'],['The Compass','A crate costs 4 coins and holds 3 items. Price too high and customers walk away.','ארגז עולה 4 מטבעות ויש בו 3 פריטים. מחיר גבוה מדי, והלקוחות הולכים.']]);
 }
-function showWin(n,he,st,rewards){rewards=['Stars: '+starStr(st)+'   Time '+Math.floor(ACT.time)+'s'].concat(rewards);rank=Math.max(rank,n);save();rankLabel();$('winRk').textContent='Rank '+RANKS[n];$('winHe').textContent=he;const b=$('winRw');b.innerHTML='';rewards.forEach(r=>{const d=document.createElement('div');d.textContent=r;b.appendChild(d);});$('nextW').style.display=(G.world==='build'||G.world==='market')?'':'none';setTimeout(()=>{$('win').style.display='flex';},1100);}
+function showWin(n,he,st,rewards){rewards=['Stars: '+starStr(st)+'   Time '+Math.floor(ACT.time)+'s'].concat(rewards);rank=Math.max(rank,n);save();rankLabel();$('winRk').textContent='Rank '+RANKS[n];$('winHe').textContent=he;const b=$('winRw');b.innerHTML='';rewards.forEach(r=>{const d=document.createElement('div');d.textContent=r;b.appendChild(d);});$('nextW').style.display=(['build','market','garden','words'].indexOf(G.world)>=0)?'':'none';setTimeout(()=>{$('win').style.display='flex';},1100);}
 function winMarket(){G.state='win';G.busy=true;pads(false);mkGift.visible=false;setXP(100);sfx('win');burst(0,3,6,0xFF4D8D,30);
   showWin(3,'עליתם דרגה: נושאי מתנה',awardStars('market'),['Sold '+MK.sold+' items · '+MK.refused+' customers walked away','New ability: run a business','New item unlocked: Hoverboard','Next world: World of the Garden']);}
 function startGarden(){
@@ -247,7 +253,23 @@ function startGarden(){
   talk([['World of the Garden','Nothing here can be rushed. A seed needs water, time, and someone who comes back for it.','כאן אי אפשר למהר שום דבר. זרע צריך מים, זמן, ומישהו שחוזר אליו.'],['The Compass','Take seeds, plant them, and water each plant twice as it grows. Harvest 8 crops.','קחו זרעים, שתלו אותם, והשקו כל צמח פעמיים בזמן שהוא גדל. קצרו 8 יבולים.'],['The Compass','Shades wilt whatever is left alone. Guard your garden with PULSE.','הצללים מייבשים כל מה שנשאר לבד. שמרו על הגן עם PULSE.']]);
 }
 function winGarden(){G.state='win';G.busy=true;pads(false);gdGift.visible=false;setXP(100);sfx('win');burst(0,3,8,0x3DDC84,30);
-  showWin(4,'עליתם דרגה: בוני גשרים',awardStars('garden'),['Harvested 8 crops · '+GD.wilted+' plants wilted by Shades','New ability: grow and heal','New companion unlocked: Sprout (choose it in Edit character)','Next world: World of Words (coming soon)']);}
+  showWin(4,'עליתם דרגה: בוני גשרים',awardStars('garden'),['Harvested 8 crops · '+GD.wilted+' plants wilted by Shades','New ability: grow and heal','New companion unlocked: Sprout (choose it in Edit character)','Next world: World of Words']);}
+function startWords(){
+  showGame();G.state='words';wdReset();
+  enterWorld('words');actReset('words');P.x=0;P.z=16;snapCam();updCnt();
+  setObj('Return <b>6 lost words</b> to their owners','החזירו 6 מילים אבודות לבעליהן');
+  talk([['World of Words','Everyone here is talking, and no one is understood. A word only works when it reaches the right person.','כולם כאן מדברים, ואף אחד לא מובן. מילה עובדת רק כשהיא מגיעה לאדם הנכון.'],['The Compass','Each person lost a word. Look at what floats beside them, pick up the matching word, and bring it to them.','כל אחד כאן איבד מילה. הסתכלו מה מרחף לידו, הרימו את המילה המתאימה, והביאו אותה אליו.'],['The Compass','Shades scramble the letters. Clear them with PULSE.','הצללים מערבבים את האותיות. סלקו אותם עם PULSE.']]);
+}
+function winWords(){G.state='win';G.busy=true;pads(false);wdGift.visible=false;setXP(100);sfx('win');burst(0,3,-2,0xB48CFF,30);
+  showWin(5,'עליתם דרגה: שומרי שער',awardStars('words'),['6 words returned · '+WD.miss+' wrong tries','New ability: speak with everyone','New item unlocked: Star crown','Next world: World of Machines']);}
+function startMachines(){
+  showGame();G.state='machines';mcReset();
+  enterWorld('machines');actReset('machines');P.x=0;P.z=19;snapCam();updCnt();
+  setObj('Program the robot to reach the <b>battery</b>','תכנתו את הרובוט להגיע אל הסוללה');
+  talk([['World of Machines','A machine does exactly what you tell it. Not what you meant. What you said.','מכונה עושה בדיוק מה שאומרים לה. לא מה שהתכוונתם. מה שאמרתם.'],['The Compass','Step on the pads to write a program: FORWARD, TURN LEFT, TURN RIGHT. Then step on RUN and watch the robot.','דרכו על המשטחים כדי לכתוב תוכנית: קדימה, פנייה שמאלה, פנייה ימינה. אז דרכו על RUN וצפו ברובוט.'],['The Compass','Jump on a pad to press it again. Solve 3 puzzles.','קפצו על משטח כדי ללחוץ עליו שוב. פתרו 3 חידות.']]);
+}
+function winMachines(){G.state='win';G.busy=true;pads(false);mcGift.visible=false;setXP(100);sfx('win');burst(0,3,13.5,0x3D7BFF,30);
+  showWin(6,'עליתם דרגה: מאירי עולמות',awardStars('machines'),['3 puzzles solved · '+MC.crashes+' failed runs','New ability: make machines work for you','New companion unlocked: Robo','Next world: World of Mirrors (coming soon)']);}
 function startGame(){
   showGame();
   G.state='town';G.sparks=0;G.blocks=0;G.hasCompass=false;
@@ -308,6 +330,7 @@ function update(dt){
   const speed=9.5;
   let nx=P.x+ix*speed*dt,nz=P.z+iz*speed*dt;
   if(ACT.kt>0){ACT.kt-=dt;nx+=ACT.kx*dt;nz+=ACT.kz*dt;}
+  if(G.world==='words'||G.world==='machines'){const C=G.world==='words'?WDC:MCC;let dx=nx-C.x,dz=nz-C.z,d=Math.hypot(dx,dz);if(d>C.r){nx=C.x+dx/d*C.r;nz=C.z+dz/d*C.r;}}
   if(G.world==='garden'){let dx=nx-GDC.x,dz=nz-GDC.z,d=Math.hypot(dx,dz);if(d>GDC.r){nx=GDC.x+dx/d*GDC.r;nz=GDC.z+dz/d*GDC.r;}[[SEED.x,SEED.z,1.7],[WELL.x,WELL.z,2.2]].forEach(o=>{const ox=nx-o[0],oz=nz-o[1],od=Math.hypot(ox,oz);if(od<o[2]&&od>0){nx=o[0]+ox/od*o[2];nz=o[1]+oz/od*o[2];}});}
   if(G.world==='market'){let dx=nx-MKC.x,dz=nz-MKC.z,d=Math.hypot(dx,dz);if(d>MKC.r){nx=MKC.x+dx/d*MKC.r;nz=MKC.z+dz/d*MKC.r;}[[SUP.x,SUP.z,2.6],[STALL.x,STALL.z,2.9]].forEach(o=>{const ox=nx-o[0],oz=nz-o[1],od=Math.hypot(ox,oz);if(od<o[2]&&od>0){nx=o[0]+ox/od*o[2];nz=o[1]+oz/od*o[2];}});}
   if(G.world==='town'&&G.state!=='custom'){nx=Math.max(-7.6,Math.min(7.4,nx));nz=Math.max(-46.5,Math.min(44,nz));const dx=nx,dz=nz+44,d=Math.hypot(dx,dz);if(d<2.1&&compass.visible===false&&d>0){nx=dx/d*2.1;nz=dz/d*2.1-44;}}
@@ -337,7 +360,7 @@ function update(dt){
   if(Math.floor(t)!==Math.floor(t-dt))sndLabel();
   updParts(dt);
   const w=G.world;
-  for(let i=0;i<spin.length;i++)if(spin[i].w===w)spin[i].f(t,dt);
+  for(let i=0;i<spin.length;i++)if(spin[i].w===w||spin[i].w==='*')spin[i].f(t,dt);
   if(w==='town'){
     compass.rotation.y=t*1.6;compass.position.y=2.6+Math.sin(t*2)*.18;
     sparks.forEach((s,i)=>{if(!s.on)return;s.g.position.y=1.6+Math.sin(t*2.4+i)*.25;s.g.rotation.y=t*2;
@@ -353,6 +376,8 @@ function update(dt){
     else portal.userData.s=0;
   }else if(w==='market'){mkUpdate(t,dt,playing);
   }else if(w==='garden'){gdUpdate(t,dt,playing);
+  }else if(w==='words'){wdUpdate(t,dt,playing);
+  }else if(w==='machines'){mcUpdate(t,dt,playing);
   }else{
     blocks.forEach((b,i)=>{if(!b.on)return;b.g.rotation.y=t*1.5+i;b.g.position.y=(b.y||0)+1.5+Math.sin(t*2+i)*.25;
       if(playing&&Math.abs(P.y-(b.y||0))<2.5&&Math.hypot(P.x-b.x,P.z-b.z)<1.8){b.on=false;b.g.visible=false;const s=segs[G.blocks];s.on=true;s.m.visible=true;G.blocks++;setXP(G.xp+7);updCnt();sfx('block',G.blocks);burst(b.x,1.6,b.z,0xFFC93C,12);toast(G.blocks<6?('Block '+G.blocks+' placed on the bridge'):'The bridge is complete!');if(G.blocks===6)setObj('Cross the bridge to the <b>gift</b>','חצו את הגשר אל המתנה');}});

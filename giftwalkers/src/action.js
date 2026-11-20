@@ -1,10 +1,10 @@
 /* ---------- ACTION: shades, pulse, hearts, stars, guide arrow ---------- */
 const ACT={hearts:3,inv:0,pulseCd:0,time:0,lost:0,kt:0,kx:0,kz:0,ringT:0,thief:14,dispelled:0,shades:[]};
 window.__ACT=ACT;
-function isPlay(){return ['town','build','market','garden'].indexOf(G.state)>=0;}
-const PAR={town:80,build:100,market:170,garden:230};
-let stars={town:0,build:0,market:0,garden:0};
-try{const s=JSON.parse(localStorage.getItem('eo_stars')||'null');if(s&&typeof s==='object')['town','build','market','garden'].forEach(k=>{const v=parseInt(s[k],10);if(v>=0&&v<=3)stars[k]=v;});}catch(e){}
+function isPlay(){return ['town','build','market','garden','words','machines'].indexOf(G.state)>=0;}
+const PAR={town:80,build:100,market:170,garden:230,words:150,machines:210};
+let stars={town:0,build:0,market:0,garden:0,words:0,machines:0};
+try{const s=JSON.parse(localStorage.getItem('eo_stars')||'null');if(s&&typeof s==='object')Object.keys(stars).forEach(k=>{const v=parseInt(s[k],10);if(v>=0&&v<=3)stars[k]=v;});}catch(e){}
 function starStr(n){return '★'.repeat(n)+'☆'.repeat(3-n);}
 function awardStars(world){const n=1+(ACT.lost===0?1:0)+(ACT.time<=PAR[world]?1:0);stars[world]=Math.max(stars[world],n);try{localStorage.setItem('eo_stars',JSON.stringify(stars));}catch(e){}return n;}
 function makeShade(){
@@ -30,11 +30,11 @@ guide.add(glow(0xFFC93C,4,.7));
 function hudHearts(){let h='';for(let i=0;i<3;i++)h+='<span style="color:'+(i<ACT.hearts?'#FF4D8D':'rgba(255,255,255,.25)')+'">♥</span>';$('hearts').innerHTML=h;}
 function actReset(world){
   ACT.hearts=3;ACT.inv=0;ACT.pulseCd=0;ACT.time=0;ACT.lost=0;ACT.kt=0;ACT.thief=14;ACT.ringT=0;ring.visible=false;
-  const spots={town:[[-3,24],[4,4],[-3,-14],[3,-30]],build:[[6,6],[-5,-2],[3,-42]],market:[],garden:[[-16,-10],[17,-6]]}[world]||[];
+  const spots={town:[[-3,24],[4,4],[-3,-14],[3,-30]],build:[[6,6],[-5,-2],[3,-42]],market:[],garden:[[-16,-10],[17,-6]],words:[[-18,-12],[18,6]],machines:[[-14,14],[14,-14]]}[world]||[];
   ACT.shades.forEach((s,i)=>{const p=spots[i];s.on=!!p;s.g.visible=!!p;s.mode='roam';s.dead=0;if(p){s.x=s.hx=p[0];s.z=s.hz=p[1];}});
   hudHearts();
 }
-function worldStart(){return G.world==='town'?[0,40]:G.world==='build'?[0,7]:G.world==='garden'?[0,13]:[0,8];}
+function worldStart(){return G.world==='town'?[0,40]:G.world==='build'?[0,7]:G.world==='garden'?[0,13]:G.world==='words'?[0,16]:G.world==='machines'?[0,19]:[0,8];}
 function hurt(s){
   ACT.hearts--;ACT.lost++;ACT.inv=1.6;hudHearts();sfx('hurt');
   const dx=P.x-s.x,dz=P.z-s.z,d=Math.hypot(dx,dz)||1;ACT.kx=dx/d*15;ACT.kz=dz/d*15;ACT.kt=.22;
@@ -62,6 +62,8 @@ function guideTarget(){
     return best;
   }
   if(G.world==='garden')return gdGuide();
+  if(G.world==='words')return wdGuide();
+  if(G.world==='machines')return mcGuide();
   if(MK.giftOn)return [0,1.5,6];
   if(MK.carry)return [STALL.x,5,STALL.z];
   if(MK.stock<3&&MK.coins>=4)return [SUP.x,4.5,SUP.z];

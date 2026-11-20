@@ -47,7 +47,7 @@ function num(v,d){return typeof v==='number'&&isFinite(v)?Math.max(-500,Math.min
 function netPeer(snap){
   const id=snap.key;if(id===NET.uid)return;const v=snap.val();if(!v||typeof v!=='object')return;
   let name=cleanName(typeof v.n==='string'?v.n:'').trim()||'Player';if(badName(name))name='Player';
-  const a=Array.isArray(v.c)?v.c:[],lim=[2,SKIN.length,5,HAIRC.length,4,TOPC.length,PANTC.length,SHOEC.length,4];
+  const a=Array.isArray(v.c)?v.c:[],lim=[2,SKIN.length,5,HAIRC.length,5,TOPC.length,PANTC.length,SHOEC.length,4];
   const c=lim.map((m,i)=>{const k=parseInt(a[i],10);return k>=0&&k<m?k:0;});
   const key=name+'|'+c.join(',');
   let p=NET.peers[id];

@@ -110,11 +110,13 @@ function gdUpdate(t,dt,playing){
 /* companion pet (unlocked at Rank 4) */
 const pet=new T.Group();pet.visible=false;scene.add(pet);
 (function(){const b=mesh(new T.SphereGeometry(.42,14,10),std(0x7be0a0,{roughness:.5}),0,0,0,pet);b.scale.set(1,.9,1);mesh(new T.ConeGeometry(.14,.5,6),std(0x2fbf71),0,.55,0,pet).rotation.z=.4;const l=mesh(new T.SphereGeometry(.2,8,6),std(0x2fbf71),.22,.62,0,pet,false);l.scale.set(1.4,.4,.8);[-.15,.15].forEach(x=>mesh(new T.SphereGeometry(.06,8,6),std(0x0E1024),x,.08,.37,pet,false));pet.add(glow(0x7be0a0,2.2,.35));})();
+const pet2=new T.Group();pet2.visible=false;scene.add(pet2);
+(function(){mesh(new T.BoxGeometry(.6,.5,.5),std(0xf4f4f8,{metalness:.4,roughness:.3}),0,0,0,pet2);[-.14,.14].forEach(x=>mesh(new T.SphereGeometry(.07,8,6),new T.MeshBasicMaterial({color:0x19E3C2}),x,.05,.26,pet2,false));mesh(new T.CylinderGeometry(.02,.02,.3,5),std(0x8a93c8),0,.4,0,pet2);mesh(new T.SphereGeometry(.07,8,6),new T.MeshBasicMaterial({color:0xFF4D8D}),0,.58,0,pet2,false);const pr=mesh(new T.BoxGeometry(.9,.04,.12),std(0x19E3C2,{emissive:0x19E3C2,emissiveIntensity:.6}),0,.34,0,pet2,false);spin.push({w:'*',f:(t)=>{pr.rotation.y=t*18;}});pet2.add(glow(0x19E3C2,2.2,.4));})();
 const PET={x:0,y:1.5,z:40};
 function petUpdate(t,dt){
-  const on=cfg.pet===1&&rank>=4&&(isPlay()||G.state==='custom'||G.state==='win');pet.visible=on;if(!on)return;
+  const show=isPlay()||G.state==='custom'||G.state==='win',a1=show&&cfg.pet===1&&rank>=4,a2=show&&cfg.pet===2&&rank>=6;pet.visible=a1;pet2.visible=a2;if(!a1&&!a2)return;const po=a1?pet:pet2;
   const tx=P.x-Math.sin(P.face)*1.5+Math.cos(P.face)*1.1,tz=P.z-Math.cos(P.face)*1.5-Math.sin(P.face)*1.1,ty=P.y+1.5+Math.sin(t*3)*.2,k=Math.min(1,dt*4);
   if(Math.hypot(tx-PET.x,tz-PET.z)>15){PET.x=tx;PET.z=tz;}
-  PET.x+=(tx-PET.x)*k;PET.y+=(ty-PET.y)*k;PET.z+=(tz-PET.z)*k;pet.position.set(PET.x,PET.y,PET.z);pet.rotation.y=Math.atan2(P.x-PET.x,P.z-PET.z);
+  PET.x+=(tx-PET.x)*k;PET.y+=(ty-PET.y)*k;PET.z+=(tz-PET.z)*k;po.position.set(PET.x,PET.y,PET.z);po.rotation.y=Math.atan2(P.x-PET.x,P.z-PET.z);
 }
 
